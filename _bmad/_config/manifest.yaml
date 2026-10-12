@@ -1,0 +1,24 @@
+installation:
+  version: 6.12.2
+  installDate: 2026-10-12T10:30:11.052Z
+  lastUpdated: 2026-10-12T10:30:11.052Z
+  installShims: false
+modules:
+  - name: core
+    version: 6.12.2
+    installDate: 2026-10-12T10:30:10.619Z
+    lastUpdated: 2026-10-12T10:30:11.051Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+  - name: bmm
+    version: 6.12.2
+    installDate: 2026-10-12T10:30:10.950Z
+    lastUpdated: 2026-10-12T10:30:11.052Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+ides:
+  - opencode
+  - antigravity
+  - github-copilot

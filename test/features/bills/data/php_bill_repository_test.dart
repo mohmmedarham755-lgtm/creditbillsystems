@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/core/network/bills_api.dart';
 import 'package:creditbillsytems/features/bills/data/php_bill_repository.dart';
 import 'package:creditbillsytems/features/bills/domain/bill_model.dart';
-import 'package:creditbillsytems/features/bills/domain/bill_repository.dart';
 import 'package:creditbillsytems/features/bills/domain/bill_status.dart';
 
 class FakeBillsApi {
@@ -177,6 +174,23 @@ void main() {
 
         expect(events.length, 2);
         expect(events[0].length, 1);
+        expect(events[1], isEmpty);
+      });
+
+      test('emits bills sorted by dueDate ascending', () async {
+        fakeBillsApi.setBills([
+          BillModel(id: 'bill-3', cardId: 'card-3', statementDate: DateTime(2026, 10, 1), dueDate: DateTime(2026, 11, 10), totalAmountDue: 100.00, remainingBalance: 100.00, minimumDue: 10.00, status: BillStatus.unpaid),
+          BillModel(id: 'bill-1', cardId: 'card-1', statementDate: DateTime(2026, 10, 1), dueDate: DateTime(2026, 10, 15), totalAmountDue: 100.00, remainingBalance: 100.00, minimumDue: 10.00, status: BillStatus.unpaid),
+          BillModel(id: 'bill-2', cardId: 'card-2', statementDate: DateTime(2026, 10, 1), dueDate: DateTime(2026, 10, 25), totalAmountDue: 100.00, remainingBalance: 100.00, minimumDue: 10.00, status: BillStatus.unpaid),
+        ]);
+        final stream = repository.watchBills(userId: 'user-123');
+        final events = await stream.toList();
+
+        expect(events.length, 2);
+        expect(events[0].length, 3);
+        expect(events[0][0].id, 'bill-1');
+        expect(events[0][1].id, 'bill-2');
+        expect(events[0][2].id, 'bill-3');
         expect(events[1], isEmpty);
       });
     });

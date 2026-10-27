@@ -1,8 +1,7 @@
-/// API configuration for the Credit Bill System PHP backend.
-///
-/// Supports configurable base URL, timeouts, and platform-aware defaults.
-/// Base URL can be overridden at compile time via `--dart-define=API_BASE_URL=...`.
-library core.network.api_config;
+// API configuration for the Credit Bill System PHP backend.
+//
+// Supports configurable base URL, timeouts, and platform-aware defaults.
+// Base URL can be overridden at compile time via `--dart-define=API_BASE_URL=...`.
 
 import 'package:flutter/foundation.dart';
 

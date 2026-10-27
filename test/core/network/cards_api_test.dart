@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -60,7 +59,7 @@ void main() {
       );
     });
 
-    Future<http.Client> _createMockClient({
+    Future<http.Client> createMockClient({
       required int statusCode,
       required Map<String, dynamic> responseBody,
       Duration? delay,
@@ -76,7 +75,7 @@ void main() {
 
     group('getCards', () {
       test('returns list of CardModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -122,7 +121,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );
@@ -139,7 +138,7 @@ void main() {
 
     group('getCard', () {
       test('returns CardModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -167,7 +166,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Card not found.'},
         );
@@ -184,7 +183,7 @@ void main() {
 
     group('createCard', () {
       test('returns created CardModel on 201', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 201,
           responseBody: {
             'success': true,
@@ -222,7 +221,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Card name is required.'},
         );
@@ -246,7 +245,7 @@ void main() {
 
     group('updateCard', () {
       test('returns updated CardModel on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -282,7 +281,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Card not found.'},
         );
@@ -306,7 +305,7 @@ void main() {
 
     group('deleteCard', () {
       test('completes on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {'success': true, 'message': 'Card deleted.'},
         );
@@ -318,7 +317,7 @@ void main() {
       });
 
       test('throws DatabaseException on 409 conflict (has bills)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 409,
           responseBody: {'success': false, 'error': 'Cannot delete card: it has associated bills.'},
         );

@@ -77,8 +77,7 @@ class FakeCardRepository implements CardRepository {
   }) => throw UnimplementedError();
 
   @override
-  Future<List<CardModel>> getCards({required String userId}) =>
-      throw UnimplementedError();
+  Future<List<CardModel>> getCards({required String userId}) async => [];
 
   @override
   Stream<List<CardModel>> watchCards({required String userId}) =>
@@ -152,7 +151,10 @@ void main() {
         testApp(authProvider: authProvider, cardProvider: cardProvider),
       );
 
-      await tester.tap(find.text('+ Add Your First Card'));
+      // Scroll down to find the button (it's at the bottom of a SingleChildScrollView in _DashboardTab)
+      await tester.drag(find.byKey(const Key('dashboard-tab-scroll')), const Offset(0, -500));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('card-carousel.empty-add')));
       await tester.pumpAndSettle();
 
       expect(find.text('Add Credit Card'), findsOneWidget);

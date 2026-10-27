@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/app_exceptions.dart';
-import '../data/php_auth_repository.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_model.dart';
 
@@ -158,16 +157,21 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Logs out the current session and resets authentication state.
+  ///
+  /// If sign-out fails, the failure is surfaced via [errorMessage] and the
+  /// authenticated state is preserved so the user is not silently logged out.
   Future<void> logout() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       await _authRepository.signOut();
-    } catch (e) {
-      debugPrint('Logout notice: $e');
-    } finally {
       clearUser();
+    } catch (e) {
+      _errorMessage = 'Logout failed. Please try again.';
+      debugPrint('Logout error: $e');
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

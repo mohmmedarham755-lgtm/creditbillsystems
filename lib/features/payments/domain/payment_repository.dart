@@ -21,4 +21,19 @@ abstract class PaymentRepository {
 
   /// Streams payments ordered by date descending.
   Stream<List<PaymentModel>> watchPayments({required String userId});
+
+  /// Deletes a payment by ID for the authenticated user.
+  ///
+  /// The backend should atomically:
+  /// 1. Delete the payment record
+  /// 2. Restore the bill's remaining_balance (+ payment amount)
+  /// 3. Recalculate the bill's status
+  /// 4. Restore the card's current_balance (- payment amount)
+  /// Throws [DatabaseException] if payment not found or has dependencies.
+  /// Throws [AuthException] if token is invalid (401).
+  /// Throws [NetworkException] on server errors.
+  Future<void> deletePayment({
+    required String userId,
+    required String paymentId,
+  });
 }

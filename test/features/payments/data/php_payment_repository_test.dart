@@ -1,20 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/core/network/payments_api.dart';
 import 'package:creditbillsytems/features/payments/data/php_payment_repository.dart';
 import 'package:creditbillsytems/features/payments/domain/payment_model.dart';
-import 'package:creditbillsytems/features/payments/domain/payment_repository.dart';
 
 class FakePaymentsApi {
   List<PaymentModel> _payments = [];
   PaymentModel? _singlePayment;
   Exception? _exceptionToThrow;
+  String? _deletedPaymentId;
 
   void setPayments(List<PaymentModel> payments) { _payments = payments; }
   void setSinglePayment(PaymentModel payment) { _singlePayment = payment; }
   void setException(Exception exception) { _exceptionToThrow = exception; }
+  String? get deletedPaymentId => _deletedPaymentId;
 
   Future<List<PaymentModel>> getPayments() async {
     if (_exceptionToThrow != null) throw _exceptionToThrow!;
@@ -38,6 +37,11 @@ class FakePaymentsApi {
       note: request.note,
     );
   }
+
+  Future<void> deletePayment(String id) async {
+    if (_exceptionToThrow != null) throw _exceptionToThrow!;
+    _deletedPaymentId = id;
+  }
 }
 
 class FakePaymentsApiWrapper implements PaymentsApi {
@@ -46,6 +50,7 @@ class FakePaymentsApiWrapper implements PaymentsApi {
   @override Future<List<PaymentModel>> getPayments() => _fake.getPayments();
   @override Future<PaymentModel> getPayment(String id) => _fake.getPayment(id);
   @override Future<PaymentModel> recordPayment(PaymentRequest request) => _fake.recordPayment(request);
+  @override Future<void> deletePayment(String id) => _fake.deletePayment(id);
 }
 
 void main() {
@@ -121,6 +126,18 @@ void main() {
         expect(events.length, 2);
         expect(events[0].length, 1);
         expect(events[1], isEmpty);
+      });
+    });
+
+    group('deletePayment', () {
+      test('deletes payment and returns void', () async {
+        await repository.deletePayment(userId: 'user-123', paymentId: 'payment-1');
+        expect(fakePaymentsApi.deletedPaymentId, 'payment-1');
+      });
+
+      test('throws exception on failure', () async {
+        final repo = PhpPaymentRepository(paymentsApi: FakePaymentsApiWrapper(FakePaymentsApi()..setException(DatabaseException('Not found', code: 'NOT_FOUND'))));
+        expect(() => repo.deletePayment(userId: 'user-123', paymentId: 'missing'), throwsA(isA<DatabaseException>().having((e) => e.code, 'code', 'NOT_FOUND')));
       });
     });
   });

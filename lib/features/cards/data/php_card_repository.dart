@@ -1,8 +1,7 @@
-/// PHP backend implementation of [CardRepository].
-///
-/// Delegates card operations to [CardsApi] and maps between domain models
-/// and API request/response DTOs.
-library features.cards.data.php_card_repository;
+// PHP backend implementation of [CardRepository].
+//
+// Delegates card operations to [CardsApi] and maps between domain models
+// and API request/response DTOs.
 
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/core/network/cards_api.dart';

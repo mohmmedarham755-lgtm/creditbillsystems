@@ -11,7 +11,7 @@ import '../domain/bill_status.dart';
 import 'bill_provider.dart';
 
 /// Displays estimated due date based on the selected card's billing cycle.
-DateTime _estimateDueDate({
+DateTime estimateDueDate({
   required DateTime statementDate,
   required int billingCycleDay,
   required int gracePeriodDays,
@@ -64,15 +64,15 @@ class BillEntryForm extends StatefulWidget {
   const BillEntryForm({super.key});
 
   @override
-  State<BillEntryForm> createState() => _BillEntryFormState();
+  State<BillEntryForm> createState() => BillEntryFormState();
 }
 
-class _BillEntryFormState extends State<BillEntryForm> {
+class BillEntryFormState extends State<BillEntryForm> {
   final _formKey = GlobalKey<FormState>();
   final _statementDateController = TextEditingController();
   final _statementAmountController = TextEditingController();
 
-  CardModel? _selectedCard;
+  CardModel? selectedCard;
   DateTime? _statementDate;
   DateTime? _estimatedDueDate;
 
@@ -88,14 +88,14 @@ class _BillEntryFormState extends State<BillEntryForm> {
   String _cardName(CardModel card) =>
       '${card.cardName} (${card.bankName}, ending ${card.last4Digits})';
 
-  void _onCardSelected(CardModel? card) {
+  void onCardSelected(CardModel? card) {
     setState(() {
-      _selectedCard = card;
+      selectedCard = card;
       _recalculateDueDate();
     });
   }
 
-  void _onStatementDateChanged(DateTime? date) {
+  void onStatementDateChanged(DateTime? date) {
     setState(() {
       _statementDate = date;
       _statementDateController.text = date != null
@@ -106,19 +106,19 @@ class _BillEntryFormState extends State<BillEntryForm> {
   }
 
   void _recalculateDueDate() {
-    if (_selectedCard == null || _statementDate == null) {
+    if (selectedCard == null || _statementDate == null) {
       _estimatedDueDate = null;
       return;
     }
-    _estimatedDueDate = _estimateDueDate(
+    _estimatedDueDate = estimateDueDate(
       statementDate: _statementDate!,
-      billingCycleDay: _selectedCard!.billingCycleDay,
-      gracePeriodDays: _selectedCard!.gracePeriodDays,
+      billingCycleDay: selectedCard!.billingCycleDay,
+      gracePeriodDays: selectedCard!.gracePeriodDays,
     );
   }
 
   String? _validateCard(CardModel? _) {
-    if (_selectedCard == null) {
+    if (selectedCard == null) {
       return 'Select a credit card.';
     }
     return null;
@@ -150,13 +150,13 @@ class _BillEntryFormState extends State<BillEntryForm> {
       lastDate: DateTime(2035),
     );
     if (picked != null) {
-      _onStatementDateChanged(picked);
+      onStatementDateChanged(picked);
     }
   }
 
   Future<void> _saveBill() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedCard == null || _statementDate == null) return;
+    if (selectedCard == null || _statementDate == null) return;
 
     final billProvider = context.read<BillProvider>();
     final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
@@ -165,7 +165,7 @@ class _BillEntryFormState extends State<BillEntryForm> {
 
     final bill = BillModel(
       id: '',
-      cardId: _selectedCard!.id,
+      cardId: selectedCard!.id,
       statementDate: _statementDate!,
       dueDate: _estimatedDueDate ?? _statementDate!,
       totalAmountDue: amount,
@@ -252,6 +252,7 @@ class _BillEntryFormState extends State<BillEntryForm> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<CardProvider>();
     final billProvider = context.watch<BillProvider>();
     final isSaving = billProvider.isSaving;
     final errorMessage = billProvider.errorMessage;
@@ -280,8 +281,8 @@ class _BillEntryFormState extends State<BillEntryForm> {
               _dropdownField(
                 label: 'Credit card',
                 key: const Key('bill-entry.card'),
-                value: _selectedCard,
-                onChanged: _onCardSelected,
+                value: selectedCard,
+                onChanged: onCardSelected,
                 itemBuilder: _cardName,
                 validator: _validateCard,
               ),

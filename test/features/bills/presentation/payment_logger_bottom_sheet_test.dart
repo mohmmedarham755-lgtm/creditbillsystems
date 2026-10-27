@@ -116,6 +116,12 @@ class _FakePaymentRepository implements PaymentRepository {
   @override
   Stream<List<PaymentModel>> watchPayments({required String userId}) =>
       const Stream<List<PaymentModel>>.empty();
+
+  @override
+  Future<void> deletePayment({
+    required String userId,
+    required String paymentId,
+  }) async {}
 }
 
 Widget _testApp({
@@ -268,6 +274,8 @@ void main() {
             find.byKey(const Key('payment-logger.amount-field')),
             value,
           );
+          // Ensure button is visible before tapping
+          await tester.ensureVisible(find.text('Confirm Payment'));
           await tester.tap(find.text('Confirm Payment'));
           await tester.pumpAndSettle();
 
@@ -286,6 +294,7 @@ void main() {
           find.byKey(const Key('payment-logger.amount-field')),
           'not-a-number',
         );
+        await tester.ensureVisible(find.text('Confirm Payment'));
         await tester.tap(find.text('Confirm Payment'));
         await tester.pumpAndSettle();
 
@@ -303,6 +312,7 @@ void main() {
           find.byKey(const Key('payment-logger.amount-field')),
           '999',
         );
+        await tester.ensureVisible(find.text('Confirm Payment'));
         await tester.tap(find.text('Confirm Payment'));
         await tester.pumpAndSettle();
 
@@ -325,6 +335,7 @@ void main() {
         find.byKey(const Key('payment-logger.amount-field')),
         '100',
       );
+      await tester.ensureVisible(find.text('Confirm Payment'));
       await tester.tap(find.text('Confirm Payment'));
       await tester.pump();
 
@@ -355,6 +366,7 @@ void main() {
         find.byKey(const Key('payment-logger.amount-field')),
         '100',
       );
+      await tester.ensureVisible(find.text('Confirm Payment'));
       await tester.tap(find.text('Confirm Payment'));
       await tester.pumpAndSettle();
 
@@ -373,6 +385,7 @@ void main() {
         find.byKey(const Key('payment-logger.amount-field')),
         '100',
       );
+      await tester.ensureVisible(find.text('Confirm Payment'));
       await tester.tap(find.text('Confirm Payment'));
       await tester.pump();
 

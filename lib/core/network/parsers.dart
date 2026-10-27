@@ -1,8 +1,7 @@
-/// API response parsing utilities for PHP/MySQL backend.
-///
-/// Provides type-safe parsing of JSON values returned by the PHP API,
-/// with strict validation and integration with the existing [AppException] hierarchy.
-library core.network.parsers;
+// API response parsing utilities for PHP/MySQL backend.
+//
+// Provides type-safe parsing of JSON values returned by the PHP API,
+// with strict validation and integration with the existing [AppException] hierarchy.
 
 import 'package:intl/intl.dart';
 import '../../core/errors/app_exceptions.dart';
@@ -129,10 +128,10 @@ double parseRequiredMoney(dynamic value, {required String fieldName}) {
     originalString = value.toString();
   } else if (value is String) {
     originalString = value.trim();
-    if (originalString!.isEmpty) {
+    if (originalString.isEmpty) {
       throw ValidationException('Empty required field: $fieldName', code: 'EMPTY_FIELD');
     }
-    parsed = double.tryParse(originalString!);
+    parsed = double.tryParse(originalString);
   } else {
     throw ValidationException('Invalid money format for field: $fieldName', code: 'INVALID_NUMBER_FORMAT');
   }
@@ -142,7 +141,7 @@ double parseRequiredMoney(dynamic value, {required String fieldName}) {
   }
 
   // Validate decimal precision (max 2 decimal places)
-  if (originalString != null && _hasInvalidDecimalPrecision(originalString)) {
+  if (_hasInvalidDecimalPrecision(originalString)) {
     throw ValidationException(
       '$fieldName cannot have more than 2 decimal places',
       code: 'INVALID_DECIMAL_PRECISION',
@@ -299,6 +298,11 @@ BillStatus _parseBillStatus(String str, {String? fieldName}) {
       return BillStatus.paid;
     case 'overdue':
       return BillStatus.overdue;
+    case 'pending':
+      // Legacy status from older PHP backend versions.
+      // Map to 'unpaid' as the default for bills with no payments yet.
+      // The server now computes proper status, but this handles legacy data.
+      return BillStatus.unpaid;
     default:
       throw ValidationException(
         'Unknown BillStatus value for ${fieldName ?? 'field'}: $str',

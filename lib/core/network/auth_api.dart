@@ -1,12 +1,10 @@
-/// Authentication API service for the Credit Bill System PHP backend.
-///
-/// Wraps [HttpApiClient] to provide authentication operations.
-/// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
-library core.network.auth_api;
+// Authentication API service for the Credit Bill System PHP backend.
+//
+// Wraps [HttpApiClient] to provide authentication operations.
+// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
 
 import 'package:creditbillsytems/core/network/api_client.dart';
 import 'package:creditbillsytems/core/network/parsers.dart';
-import 'package:creditbillsytems/core/network/api_response.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/features/auth/domain/user_model.dart';
 
@@ -75,7 +73,7 @@ class AuthApi {
     if (rawData == null) {
       throw NetworkException('Login response missing data', code: 'MALFORMED_RESPONSE');
     }
-    return LoginResponse.fromJson(rawData as Map<String, dynamic>);
+    return LoginResponse.fromJson(rawData);
   }
 
   /// Registers a new user.
@@ -108,7 +106,7 @@ class AuthApi {
     if (rawData == null) {
       throw NetworkException('Register response missing data', code: 'MALFORMED_RESPONSE');
     }
-    return RegisterResponse.fromJson(rawData as Map<String, dynamic>);
+    return RegisterResponse.fromJson(rawData);
   }
 
   /// Gets the current authenticated user's profile.
@@ -138,7 +136,7 @@ class AuthApi {
   Future<void> logout() async {
     await _client.post<void>(
       'auth/logout.php',
-      decoder: (data) => null,
+      decoder: (data) {},
     );
   }
 }

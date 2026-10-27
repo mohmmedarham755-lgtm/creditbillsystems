@@ -1,4 +1,4 @@
-/// Application failure envelope defining domain exceptions.
+// Application failure envelope defining domain exceptions.
 import 'package:http/http.dart' as http;
 import 'dart:async';
 

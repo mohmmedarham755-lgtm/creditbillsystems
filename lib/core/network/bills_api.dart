@@ -1,12 +1,10 @@
-/// Bills API service for the Credit Bill System PHP backend.
-///
-/// Wraps [HttpApiClient] to provide bill operations.
-/// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
-library core.network.bills_api;
+// Bills API service for the Credit Bill System PHP backend.
+//
+// Wraps [HttpApiClient] to provide bill operations.
+// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
 
 import 'package:creditbillsytems/core/network/api_client.dart';
 import 'package:creditbillsytems/core/network/parsers.dart';
-import 'package:creditbillsytems/core/network/api_response.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/features/bills/domain/bill_model.dart';
 import 'package:creditbillsytems/features/bills/domain/bill_status.dart';
@@ -126,15 +124,59 @@ class BillsApi {
   }
 
   BillModel _parseBill(Map<String, dynamic> json) {
+    // Support both PHP field names (total_amount, paid_amount, minimum_payment)
+    // and Flutter-compatible names (total_amount_due, remaining_balance, minimum_due)
+    final totalAmount = parseRequiredMoney(
+      json['total_amount_due'] ?? json['total_amount'],
+      fieldName: 'total_amount_due/total_amount',
+    );
+    final paidAmount = parseOptionalMoney(json['paid_amount']);
+    final remainingBalance = parseOptionalMoney(json['remaining_balance']) ??
+        (paidAmount != null ? totalAmount - paidAmount : totalAmount);
+    final minimumDue = parseRequiredMoney(
+      json['minimum_due'] ?? json['minimum_payment'],
+      fieldName: 'minimum_due/minimum_payment',
+    );
+
+    // Status mapping: PHP uses 'pending'/'paid', Flutter uses 'unpaid'/'partiallyPaid'/'paid'/'overdue'
+    // Server now returns Flutter-compatible status, but handle legacy 'pending' gracefully
+    final rawStatus = parseRequiredString(json['status'], fieldName: 'status');
+    final status = _mapStatus(rawStatus, totalAmount, json['paid_amount']);
+
     return BillModel(
       id: parseRequiredString(json['id'], fieldName: 'id'),
       cardId: parseRequiredString(json['card_id'], fieldName: 'card_id'),
       statementDate: parseRequiredDate(json['statement_date'], fieldName: 'statement_date'),
       dueDate: parseRequiredDate(json['due_date'], fieldName: 'due_date'),
-      totalAmountDue: parseRequiredMoney(json['total_amount_due'], fieldName: 'total_amount_due'),
-      remainingBalance: parseRequiredMoney(json['remaining_balance'], fieldName: 'remaining_balance'),
-      minimumDue: parseRequiredMoney(json['minimum_due'], fieldName: 'minimum_due'),
-      status: parseRequiredBillStatus(json['status'], fieldName: 'status'),
+      totalAmountDue: totalAmount,
+      remainingBalance: remainingBalance,
+      minimumDue: minimumDue,
+      status: status,
     );
+  }
+
+  /// Maps PHP status values to Flutter BillStatus enum.
+  /// Handles legacy 'pending' -> 'unpaid' for backward compatibility.
+  BillStatus _mapStatus(String rawStatus, double totalAmount, dynamic paidAmount) {
+    switch (rawStatus) {
+      case 'paid':
+        return BillStatus.paid;
+      case 'overdue':
+        return BillStatus.overdue;
+      case 'partiallyPaid':
+        return BillStatus.partiallyPaid;
+      case 'unpaid':
+        return BillStatus.unpaid;
+      case 'pending':
+        // Legacy status: map based on paid amount
+        final paid = parseOptionalMoney(paidAmount) ?? 0.0;
+        if (paid > 0.01) {
+          return BillStatus.partiallyPaid;
+        }
+        return BillStatus.unpaid;
+      default:
+        // Default to unpaid for unknown status
+        return BillStatus.unpaid;
+    }
   }
 }

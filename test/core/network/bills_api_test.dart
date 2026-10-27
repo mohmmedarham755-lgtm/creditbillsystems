@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -61,7 +60,7 @@ void main() {
       );
     });
 
-    Future<http.Client> _createMockClient({
+    Future<http.Client> createMockClient({
       required int statusCode,
       required Map<String, dynamic> responseBody,
       Duration? delay,
@@ -77,7 +76,7 @@ void main() {
 
     group('getBills', () {
       test('returns list of BillModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -123,7 +122,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );
@@ -140,7 +139,7 @@ void main() {
 
     group('getBill', () {
       test('returns BillModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -170,7 +169,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Bill not found.'},
         );
@@ -187,7 +186,7 @@ void main() {
 
     group('createBill', () {
       test('returns created BillModel on 201', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 201,
           responseBody: {
             'success': true,
@@ -224,7 +223,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'card_id, statement_date, and due_date are required.'},
         );
@@ -246,7 +245,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404 for invalid card', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Card not found or does not belong to user.'},
         );
@@ -270,7 +269,7 @@ void main() {
 
     group('updateBill', () {
       test('returns updated BillModel on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -306,7 +305,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Bill not found.'},
         );
@@ -330,7 +329,7 @@ void main() {
 
     group('deleteBill', () {
       test('completes on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {'success': true, 'message': 'Bill deleted.'},
         );
@@ -342,7 +341,7 @@ void main() {
       });
 
       test('throws DatabaseException on 409 conflict (has payments)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 409,
           responseBody: {'success': false, 'error': 'Cannot delete bill: it has associated payments.'},
         );

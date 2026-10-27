@@ -1,8 +1,7 @@
-/// PHP backend implementation of [BillRepository].
-///
-/// Delegates bill operations to [BillsApi] and maps between domain models
-/// and API request/response DTOs.
-library features.bills.data.php_bill_repository;
+// PHP backend implementation of [BillRepository].
+//
+// Delegates bill operations to [BillsApi] and maps between domain models
+// and API request/response DTOs.
 
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/core/network/bills_api.dart';
@@ -75,7 +74,8 @@ class PhpBillRepository implements BillRepository {
     // Emit current data once, then yield empty stream.
     // Consumers should poll getBills() for updates.
     try {
-      final bills = await _billsApi.getBills();
+      final bills = await _billsApi.getBills()
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
       yield bills;
     } on AuthException {
       rethrow;

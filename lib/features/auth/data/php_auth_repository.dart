@@ -1,9 +1,8 @@
-/// PHP backend implementation of [AuthRepository].
-///
-/// Delegates authentication operations to [AuthApi] and manages token storage
-/// via [TokenStorage]. Provides a lightweight in-memory auth state stream
-/// updated by explicit authentication operations.
-library features.auth.data.php_auth_repository;
+// PHP backend implementation of [AuthRepository].
+//
+// Delegates authentication operations to [AuthApi] and manages token storage
+// via [TokenStorage]. Provides a lightweight in-memory auth state stream
+// updated by explicit authentication operations.
 
 import 'dart:async';
 
@@ -35,7 +34,7 @@ class PhpAuthRepository implements AuthRepository {
     required String password,
     String? displayName,
   }) async {
-    final response = await _authApi.register(
+    await _authApi.register(
       email: email,
       password: password,
       displayName: displayName,
@@ -56,7 +55,6 @@ class PhpAuthRepository implements AuthRepository {
       displayName: displayName?.trim(),
     );
     _currentUser = user;
-    print('[PhpAuthRepository] Adding user to authStateChanges: $user');
     _authStateController.add(user);
 
     return user;
@@ -81,7 +79,6 @@ class PhpAuthRepository implements AuthRepository {
       displayName: null,
     );
     _currentUser = user;
-    print('[PhpAuthRepository] Adding user to authStateChanges: $user');
     _authStateController.add(user);
 
     return user;
@@ -94,7 +91,6 @@ class PhpAuthRepository implements AuthRepository {
     } finally {
       await _tokenStorage.clear();
       _currentUser = null;
-      print('[PhpAuthRepository] Adding null to authStateChanges (logout)');
       _authStateController.add(null);
     }
   }
@@ -114,16 +110,12 @@ class PhpAuthRepository implements AuthRepository {
   Future<UserModel?> getCurrentUser() async {
     try {
       final user = await _authApi.getCurrentUser();
-      if (user != null) {
-        _currentUser = user;
-        print('[PhpAuthRepository] Adding user to authStateChanges: $user');
-        _authStateController.add(user);
-      }
+      _currentUser = user;
+      _authStateController.add(user);
       return user;
     } on AuthException {
       // Token expired or invalid - clear local state
       _currentUser = null;
-      print('[PhpAuthRepository] Adding null to authStateChanges (auth exception)');
       _authStateController.add(null);
       return null;
     } on NetworkException {

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -60,7 +59,7 @@ void main() {
       );
     });
 
-    Future<http.Client> _createMockClient({
+    Future<http.Client> createMockClient({
       required int statusCode,
       required Map<String, dynamic> responseBody,
       Duration? delay,
@@ -76,7 +75,7 @@ void main() {
 
     group('login', () {
       test('returns LoginResponse on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -103,7 +102,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Invalid email or password.'},
         );
@@ -118,7 +117,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Email and password are required.'},
         );
@@ -135,7 +134,7 @@ void main() {
 
     group('register', () {
       test('returns RegisterResponse on 201', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 201,
           responseBody: {'success': true, 'message': 'User registered.'},
         );
@@ -153,7 +152,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Email and password are required.'},
         );
@@ -168,7 +167,7 @@ void main() {
       });
 
       test('throws DatabaseException on 409 email conflict', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 409,
           responseBody: {'success': false, 'error': 'This email is already in use.'},
         );
@@ -185,7 +184,7 @@ void main() {
 
     group('getCurrentUser', () {
       test('returns UserModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -210,7 +209,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );
@@ -225,7 +224,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'User not found.'},
         );
@@ -242,7 +241,7 @@ void main() {
 
     group('logout', () {
       test('completes on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {'success': true, 'message': 'Logged out.'},
         );
@@ -254,7 +253,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );

@@ -1,17 +1,13 @@
-/// Interface for secure authentication token storage.
-///
-/// Implementations should store the bearer token, user ID, and token expiry
-/// securely (e.g., encrypted shared preferences on Android, Keychain on iOS).
-///
-/// Note: On the web platform, [flutter_secure_storage] uses localStorage,
-/// which is NOT secure against XSS attacks. Do not use this for highly
-/// sensitive applications on the web without a custom implementation.
-library core.auth.token_storage;
-
-import 'package:meta/meta.dart';
+// Interface for secure authentication token storage.
+//
+// Implementations should store the bearer token, user ID, and token expiry
+// securely (e.g., encrypted shared preferences on Android, Keychain on iOS).
+//
+// Note: On the web platform, [flutter_secure_storage] uses localStorage,
+// which is NOT secure against XSS attacks. Do not use this for highly
+// sensitive applications on the web without a custom implementation.
 
 /// Abstract interface for token storage operations.
-@immutable
 abstract class TokenStorage {
   /// Saves the authentication token, user ID, and expiry timestamp.
   Future<void> saveToken(String token, String userId, DateTime expiresAt);

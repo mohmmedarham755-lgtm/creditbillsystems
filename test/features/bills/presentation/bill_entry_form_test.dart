@@ -1,13 +1,19 @@
+import 'dart:async';
+
+import 'package:creditbillsytems/core/utils/date_formatter.dart';
 import 'package:creditbillsytems/features/auth/domain/auth_repository.dart';
 import 'package:creditbillsytems/features/auth/domain/user_model.dart';
 import 'package:creditbillsytems/features/auth/presentation/auth_provider.dart';
-import 'package:creditbillsytems/features/bills/data/bill_repository_impl.dart';
+import 'package:creditbillsytems/features/bills/domain/bill_model.dart';
+import 'package:creditbillsytems/features/bills/domain/bill_repository.dart';
+import 'package:creditbillsytems/features/bills/domain/bill_status.dart';
 import 'package:creditbillsytems/features/bills/presentation/bill_entry_form.dart';
 import 'package:creditbillsytems/features/bills/presentation/bill_provider.dart';
-import 'package:creditbillsytems/features/cards/data/card_repository_impl.dart';
 import 'package:creditbillsytems/features/cards/domain/card_model.dart';
+import 'package:creditbillsytems/features/cards/domain/card_repository.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_provider.dart';
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:creditbillsytems/features/payments/domain/payment_model.dart';
+import 'package:creditbillsytems/features/payments/domain/payment_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -42,191 +48,330 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> signOut() async {}
 }
 
+class _FakeCardRepository implements CardRepository {
+  int watchCalls = 0;
+  final Map<String, List<StreamController<List<CardModel>>>> watchedStreams =
+      {};
+
+  StreamController<List<CardModel>> streamFor(String userId, [int index = 0]) =>
+      watchedStreams[userId]![index];
+
+  @override
+  Future<CardModel> createCard({
+    required String userId,
+    required CardModel card,
+  }) async => card.copyWith(id: 'saved-card');
+
+  @override
+  Future<void> deleteCard({required String userId, required String cardId}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<CardModel?> getCard({
+    required String userId,
+    required String cardId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<List<CardModel>> getCards({required String userId}) =>
+      throw UnimplementedError();
+
+  @override
+  Stream<List<CardModel>> watchCards({required String userId}) {
+    watchCalls++;
+    final controller = StreamController<List<CardModel>>();
+    watchedStreams.putIfAbsent(userId, () => []).add(controller);
+    return controller.stream;
+  }
+
+  @override
+  Future<void> updateCard({required String userId, required CardModel card}) =>
+      throw UnimplementedError();
+}
+
+class _FakeBillRepository implements BillRepository {
+  int createCalls = 0;
+  BillModel? createdBill;
+
+  @override
+  Future<BillModel> createBill({
+    required String userId,
+    required BillModel bill,
+  }) async {
+    createCalls++;
+    createdBill = bill;
+    return bill.copyWith(id: 'saved-bill-id');
+  }
+
+  @override
+  Future<BillModel?> getBill({
+    required String userId,
+    required String billId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<List<BillModel>> getBills({required String userId}) =>
+      throw UnimplementedError();
+
+  @override
+  Stream<List<BillModel>> watchBills({required String userId}) =>
+      const Stream<List<BillModel>>.empty();
+
+  @override
+  Future<void> updateBill({required String userId, required BillModel bill}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deleteBill({required String userId, required String billId}) =>
+      throw UnimplementedError();
+}
+
+class _FakePaymentRepository implements PaymentRepository {
+  @override
+  Future<PaymentModel> recordPayment({
+    required String userId,
+    required PaymentModel payment,
+  }) async => payment;
+
+  @override
+  Future<PaymentModel?> getPayment({
+    required String userId,
+    required String paymentId,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<List<PaymentModel>> getPayments({required String userId}) =>
+      throw UnimplementedError();
+
+  @override
+  Stream<List<PaymentModel>> watchPayments({required String userId}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deletePayment({
+    required String userId,
+    required String paymentId,
+  }) async {}
+}
+
 Widget _formApp({
-  required AuthProvider authProvider,
   required CardProvider cardProvider,
   required BillProvider billProvider,
 }) {
-  cardProvider.bindAuthProvider(authProvider);
-  billProvider.bindAuthProvider(authProvider);
-  return MultiProvider(
-    providers: [
-      ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-      ChangeNotifierProvider<CardProvider>.value(value: cardProvider),
-      ChangeNotifierProvider<BillProvider>.value(value: billProvider),
-    ],
-    child: const MaterialApp(home: Scaffold(body: BillEntryForm())),
+  return MaterialApp(
+    home: Scaffold(
+      body: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 800),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 800),
+            child: ChangeNotifierProvider<CardProvider>.value(
+              value: cardProvider,
+              child: ChangeNotifierProvider<BillProvider>.value(
+                value: billProvider,
+                child: const BillEntryForm(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
   );
 }
 
-CardModel makeCard({
-  String id = 'card-1',
-  String cardName = 'Test Card',
-  String bankName = 'Test Bank',
-  String last4Digits = '1234',
-  double creditLimit = 5000.0,
-  int billingCycleDay = 15,
-  int gracePeriodDays = 20,
-  double currentBalance = 0.0,
-}) {
-  return CardModel(
-    id: id,
-    cardName: cardName,
-    bankName: bankName,
-    last4Digits: last4Digits,
-    creditLimit: creditLimit,
-    billingCycleDay: billingCycleDay,
-    gracePeriodDays: gracePeriodDays,
-    currentBalance: currentBalance,
-  );
-}
+const _testCard1 = CardModel(
+  id: 'card-1',
+  cardName: 'Visa Rewards',
+  bankName: 'Test Bank',
+  last4Digits: '1234',
+  creditLimit: 5000.0,
+  billingCycleDay: 15,
+  gracePeriodDays: 21,
+  currentBalance: 0.0,
+);
+
+const _testCard2 = CardModel(
+  id: 'card-2',
+  cardName: 'Mastercard',
+  bankName: 'Other Bank',
+  last4Digits: '5678',
+  creditLimit: 10000.0,
+  billingCycleDay: 31,
+  gracePeriodDays: 7,
+  currentBalance: 0.0,
+);
 
 void main() {
   group('BillEntryForm', () {
-    testWidgets('renders card dropdown and amount fields when cards exist', (
+    late _FakeAuthRepository authRepository;
+    late AuthProvider authProvider;
+    late _FakeCardRepository cardRepository;
+    late CardProvider cardProvider;
+    late _FakeBillRepository billRepository;
+    late BillProvider billProvider;
+    late _FakePaymentRepository paymentRepository;
+
+    setUp(() {
+      authRepository = _FakeAuthRepository();
+      authProvider = AuthProvider(
+        authRepository: authRepository,
+        listenToAuthChanges: false,
+      )..setUser(uid: 'user-1', email: 'one@example.com');
+      cardRepository = _FakeCardRepository();
+      cardProvider = CardProvider(
+        cardRepository: cardRepository,
+        authProvider: authProvider,
+      );
+      billRepository = _FakeBillRepository();
+      paymentRepository = _FakePaymentRepository();
+      billProvider = BillProvider(
+        billRepository: billRepository,
+        authProvider: authProvider,
+        paymentRepository: paymentRepository,
+      );
+    });
+
+    tearDown(() {
+      authProvider.dispose();
+      cardProvider.dispose();
+      billProvider.dispose();
+      for (final streams in cardRepository.watchedStreams.values) {
+        for (final controller in streams) {
+          controller.close();
+        }
+      }
+    });
+
+    testWidgets('shows empty-card message when no cards available', (
       tester,
     ) async {
-      final authProvider = AuthProvider(
-        authRepository: _FakeAuthRepository(),
-        listenToAuthChanges: false,
-      )..setUser(uid: 'user-1', email: 'one@example.com');
-      final firestore = FakeFirebaseFirestore();
-      final cardRepository = CardRepositoryImpl(firestore: firestore);
-      final cardProvider = CardProvider(
-        cardRepository: cardRepository,
-        authProvider: authProvider,
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
       );
-      final billRepository = BillRepositoryImpl(firestore: firestore);
-      final billProvider = BillProvider(
-        billRepository: billRepository,
-        authProvider: authProvider,
+
+      expect(
+        find.text('No credit cards available. Add a card first.'),
+        findsOneWidget,
       );
-      addTearDown(authProvider.dispose);
-      addTearDown(cardProvider.dispose);
-      addTearDown(billProvider.dispose);
-
-      await cardProvider.addCard(
-        userId: 'user-1',
-        card: makeCard(billingCycleDay: 15, gracePeriodDays: 20),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.pumpWidget(_formApp(
-        authProvider: authProvider,
-        cardProvider: cardProvider,
-        billProvider: billProvider,
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Log New Bill'), findsOneWidget);
-      expect(find.text('Credit card'), findsOneWidget);
-      expect(find.text('Statement date'), findsOneWidget);
-      expect(find.text('Statement amount'), findsOneWidget);
-      expect(find.text('Save Bill'), findsOneWidget);
     });
 
-    testWidgets('shows no cards when card list is empty', (tester) async {
-      final authProvider = AuthProvider(
-        authRepository: _FakeAuthRepository(),
-        listenToAuthChanges: false,
-      )..setUser(uid: 'user-1', email: 'one@example.com');
-      final firestore = FakeFirebaseFirestore();
-      final cardRepository = CardRepositoryImpl(firestore: firestore);
-      final cardProvider = CardProvider(
-        cardRepository: cardRepository,
-        authProvider: authProvider,
-      );
-      final billRepository = BillRepositoryImpl(firestore: firestore);
-      final billProvider = BillProvider(
-        billRepository: billRepository,
-        authProvider: authProvider,
-      );
-      addTearDown(authProvider.dispose);
-      addTearDown(cardProvider.dispose);
-      addTearDown(billProvider.dispose);
-
-      await tester.pumpAndSettle();
-
-      await tester.pumpWidget(_formApp(
-        authProvider: authProvider,
-        cardProvider: cardProvider,
-        billProvider: billProvider,
-      ));
-      await tester.pumpAndSettle();
-
-      // Form renders with save button (disabled when no cards)
-      expect(find.text('Log New Bill'), findsOneWidget);
-      expect(find.byKey(const Key('bill-entry.save')), findsOneWidget);
-    });
-
-    testWidgets('save button is disabled when no cards', (tester) async {
-      final authProvider = AuthProvider(
-        authRepository: _FakeAuthRepository(),
-        listenToAuthChanges: false,
-      )..setUser(uid: 'user-1', email: 'one@example.com');
-      final firestore = FakeFirebaseFirestore();
-      final cardRepository = CardRepositoryImpl(firestore: firestore);
-      final cardProvider = CardProvider(
-        cardRepository: cardRepository,
-        authProvider: authProvider,
-      );
-      final billRepository = BillRepositoryImpl(firestore: firestore);
-      final billProvider = BillProvider(
-        billRepository: billRepository,
-        authProvider: authProvider,
-      );
-      addTearDown(authProvider.dispose);
-      addTearDown(cardProvider.dispose);
-      addTearDown(billProvider.dispose);
-
-      await tester.pumpAndSettle();
-
-      await tester.pumpWidget(_formApp(
-        authProvider: authProvider,
-        cardProvider: cardProvider,
-        billProvider: billProvider,
-      ));
-      await tester.pumpAndSettle();
-
-      // Save button should be disabled when no cards
-      expect(find.byKey(const Key('bill-entry.save')), findsOneWidget);
-    });
-
-    testWidgets('calculates due date from billing cycle and grace period', (
+    testWidgets('renders card dropdown when cards are available', (
       tester,
     ) async {
-      // Unit test the due date calculation logic directly
-      final statementDate = DateTime(2026, 10, 1);
-      final billingCycleDay = 15;
-      final gracePeriodDays = 20;
-
-      // Use the widget's internal calculation by reflecting on the expected result
-      // Oct 15 + 20 days = Nov 4, 2026
-      final expectedDueDate = DateTime(2026, 11, 4);
-
-      // Verify via the exported calculation logic
-      final cycleDate = DateTime(
-        statementDate.year,
-        statementDate.month,
-        billingCycleDay,
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
       );
-      final dueDate = cycleDate.add(Duration(days: gracePeriodDays));
 
-      expect(dueDate, expectedDueDate);
+      cardRepository.streamFor('user-1').add([_testCard1, _testCard2]);
+      await tester.pumpAndSettle();
+
+      // Dropdown is closed with no selection → tap to open and reveal items
+      await tester.tap(find.byKey(const Key('bill-entry.card')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Visa Rewards'), findsOneWidget);
+      expect(find.textContaining('Mastercard'), findsOneWidget);
     });
 
-    testWidgets('handles month-end cycle day safely', (tester) async {
-      // Jan 31 + 5 days grace = Feb 5 (handles month-end)
-      final cycleDate = DateTime(2026, 1, 31);
-      final dueDate = cycleDate.add(const Duration(days: 5));
-      expect(dueDate, DateTime(2026, 2, 5));
+    testWidgets('selecting a card and statement date shows estimated due date', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      // Select card
+      await tester.tap(find.byKey(const Key('bill-entry.card')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Visa Rewards'));
+      await tester.pumpAndSettle();
+
+      // Verify card is selected
+      expect(find.textContaining('Visa Rewards'), findsOneWidget);
+
+      // Set selected card and statement date directly by accessing the form state
+      final formState = tester.state<BillEntryFormState>(
+        find.byType(BillEntryForm),
+      );
+      formState.onCardSelected(_testCard1);
+      formState.onStatementDateChanged(DateTime(2026, 10, 1));
+      await tester.pumpAndSettle();
+
+      // Compute expected due date based on test date
+      // billingCycleDay=15, gracePeriodDays=21
+      // Oct 1 -> cycle date Oct 15 -> +21 days = Nov 5, 2026
+      final expectedDueDate = DateTime(2026, 11, 5);
+      final expectedDueStr = DateFormatter.formatDisplay(expectedDueDate);
+
+      // Verify estimated due date is shown
+      expect(find.textContaining('Estimated due date:'), findsOneWidget);
+      expect(find.textContaining(expectedDueStr), findsOneWidget);
     });
 
-    testWidgets('handles leap year safely', (tester) async {
-      // Feb 29 (leap year) + 1 day = Mar 1
-      final cycleDate = DateTime(2024, 2, 29);
-      final dueDate = cycleDate.add(const Duration(days: 1));
-      expect(dueDate, DateTime(2024, 3, 1));
+    testWidgets('submits valid bill with correct fields', (tester) async {
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      // Select card
+      await tester.tap(find.byKey(const Key('bill-entry.card')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Visa Rewards'));
+      await tester.pumpAndSettle();
+
+      // Verify card is selected
+      expect(find.textContaining('Visa Rewards'), findsOneWidget);
+
+      // Set selected card and statement date directly by accessing the form state
+      final formState = tester.state<BillEntryFormState>(
+        find.byType(BillEntryForm),
+      );
+      formState.onCardSelected(_testCard1);
+      formState.onStatementDateChanged(DateTime(2026, 10, 1));
+      await tester.pumpAndSettle();
+
+      // Enter amount
+      await tester.enterText(
+        find.byKey(const Key('bill-entry.statement-amount')),
+        '900.00',
+      );
+      await tester.pump();
+
+      // Save - ensure button is visible
+      await tester.ensureVisible(find.byKey(const Key('bill-entry.save')));
+      await tester.tap(find.byKey(const Key('bill-entry.save')));
+      await tester.pumpAndSettle();
+
+      // Verify bill was created with correct fields
+      expect(billRepository.createCalls, 1);
+      expect(billRepository.createdBill?.cardId, 'card-1');
+      expect(billRepository.createdBill?.totalAmountDue, 900.0);
+      expect(billRepository.createdBill?.remainingBalance, 900.0);
+      expect(billRepository.createdBill?.status, BillStatus.unpaid);
+    });
+
+    testWidgets('shows validation errors for empty required fields', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      // Try to save without selecting card or entering amount
+      await tester.tap(find.byKey(const Key('bill-entry.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select a credit card.'), findsOneWidget);
+      expect(find.text('Enter a statement amount.'), findsOneWidget);
     });
   });
 }

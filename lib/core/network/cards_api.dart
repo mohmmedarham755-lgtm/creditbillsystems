@@ -1,12 +1,10 @@
-/// Cards API service for the Credit Bill System PHP backend.
-///
-/// Wraps [HttpApiClient] to provide card operations.
-/// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
-library core.network.cards_api;
+// Cards API service for the Credit Bill System PHP backend.
+//
+// Wraps [HttpApiClient] to provide card operations.
+// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
 
 import 'package:creditbillsytems/core/network/api_client.dart';
 import 'package:creditbillsytems/core/network/parsers.dart';
-import 'package:creditbillsytems/core/network/api_response.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/features/cards/domain/card_model.dart';
 

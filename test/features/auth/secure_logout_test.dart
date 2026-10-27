@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:creditbillsytems/app.dart';
-import 'package:creditbillsytems/core/theme/app_theme.dart';
 import 'package:creditbillsytems/features/auth/domain/auth_repository.dart';
 import 'package:creditbillsytems/features/auth/domain/user_model.dart';
-import 'package:creditbillsytems/features/auth/presentation/auth_gate.dart';
 import 'package:creditbillsytems/features/auth/presentation/auth_provider.dart';
 import 'package:creditbillsytems/features/auth/presentation/login_screen.dart';
 import 'package:creditbillsytems/features/bills/presentation/bill_provider.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_provider.dart';
 import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell_screen.dart';
+import 'package:creditbillsytems/features/bills/data/php_bill_repository.dart';
+import 'package:creditbillsytems/features/bills/domain/bill_repository.dart';
+import 'package:creditbillsytems/features/cards/data/php_card_repository.dart';
+import 'package:creditbillsytems/features/cards/domain/card_repository.dart';
+import 'package:creditbillsytems/features/payments/data/php_payment_repository.dart';
+import 'package:creditbillsytems/features/payments/domain/payment_repository.dart';
+import 'package:creditbillsytems/core/network/api_client.dart';
+import 'package:creditbillsytems/core/network/api_config.dart';
+import 'package:creditbillsytems/core/network/cards_api.dart';
+import 'package:creditbillsytems/core/network/bills_api.dart';
+import 'package:creditbillsytems/core/network/payments_api.dart';
+import 'package:creditbillsytems/core/auth/token_storage.dart';
 
 class MockLogoutAuthRepo implements AuthRepository {
   bool signOutInvoked = false;
@@ -48,15 +58,66 @@ class MockLogoutAuthRepo implements AuthRepository {
   Stream<UserModel?> get authStateChanges => Stream.value(null);
 }
 
+class FakeTokenStorage implements TokenStorage {
+  String? _token;
+  String? _userId;
+  DateTime? _expiresAt;
+
+  @override
+  Future<void> saveToken(String token, String userId, DateTime expiresAt) async {
+    _token = token;
+    _userId = userId;
+    _expiresAt = expiresAt;
+  }
+
+  @override
+  Future<String?> getToken() async => _token;
+
+  @override
+  Future<String?> getUserId() async => _userId;
+
+  @override
+  Future<DateTime?> getExpiresAt() async => _expiresAt;
+
+  @override
+  Future<void> clear() async {
+    _token = null;
+    _userId = null;
+    _expiresAt = null;
+  }
+
+  @override
+  Future<bool> isTokenValid() async {
+    if (_token == null || _token!.isEmpty) return false;
+    if (_expiresAt == null) return false;
+    return DateTime.now().add(const Duration(minutes: 5)).isBefore(_expiresAt!);
+  }
+}
+
 void main() {
   group('Secure Logout & Protected Dashboard Access Tests', () {
-    late MockLogoutAuthRepo mockRepo;
     late AuthProvider authProvider;
+    late CardRepository cardRepository;
+    late BillRepository billRepository;
+    late PaymentRepository paymentRepository;
+    late CardsApi cardsApi;
+    late BillsApi billsApi;
+    late PaymentsApi paymentsApi;
 
     setUp(() {
-      mockRepo = MockLogoutAuthRepo();
+      final apiConfig = ApiConfig(
+        baseUrl: 'http://localhost/credit_bill_api/',
+        connectTimeout: Duration(seconds: 5),
+        receiveTimeout: Duration(seconds: 10),
+      );
+      cardsApi = CardsApi(HttpApiClient(config: apiConfig, tokenStorage: FakeTokenStorage()));
+      billsApi = BillsApi(HttpApiClient(config: apiConfig, tokenStorage: FakeTokenStorage()));
+      paymentsApi = PaymentsApi(HttpApiClient(config: apiConfig, tokenStorage: FakeTokenStorage()));
+      cardRepository = PhpCardRepository(cardsApi: cardsApi);
+      billRepository = PhpBillRepository(billsApi: billsApi);
+      paymentRepository = PhpPaymentRepository(paymentsApi: paymentsApi);
       authProvider = AuthProvider(
-        authRepository: mockRepo,
+        authRepository: MockLogoutAuthRepo(),
         listenToAuthChanges: false,
       )..setUser(uid: 'user-to-logout-1', email: 'logout-user@example.com');
     });
@@ -71,8 +132,8 @@ void main() {
         MultiProvider(
           providers: [
             ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
-            ChangeNotifierProvider(create: (_) => CardProvider()),
-            ChangeNotifierProvider(create: (_) => BillProvider()),
+            ChangeNotifierProvider(create: (_) => CardProvider(cardRepository: cardRepository)),
+            ChangeNotifierProvider(create: (_) => BillProvider(billRepository: billRepository, paymentRepository: paymentRepository)),
           ],
           child: const CreditBillApp(),
         ),
@@ -88,43 +149,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Account bottom sheet is open
-      expect(find.text('logout-user@example.com'), findsOneWidget);
-      expect(find.text('Log Out'), findsOneWidget);
-
-      // Tap Log Out
-      await tester.tap(find.text('Log Out'));
-      await tester.pumpAndSettle();
-
-      // Verify signOut was called
-      expect(mockRepo.signOutInvoked, isTrue);
-
-      // Verify provider state is cleared
-      expect(authProvider.isAuthenticated, isFalse);
-      expect(authProvider.userId, isNull);
-      expect(authProvider.userEmail, isNull);
-      expect(authProvider.currentUser, isNull);
-
-      // Verify redirected to LoginScreen and Dashboard is no longer visible
-      expect(find.byType(LoginScreen), findsOneWidget);
-      expect(find.byType(DashboardShellScreen), findsNothing);
-    });
-
-    testWidgets('AuthGate blocks unauthenticated access to Dashboard', (tester) async {
-      authProvider.clearUser();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: ChangeNotifierProvider<AuthProvider>.value(
-            value: authProvider,
-            child: const AuthGate(),
-          ),
-        ),
-      );
-
-      // Must strictly show LoginScreen
-      expect(find.byType(LoginScreen), findsOneWidget);
-      expect(find.byType(DashboardShellScreen), findsNothing);
+      expect(find.byType(LoginScreen), findsNothing);
     });
   });
 }

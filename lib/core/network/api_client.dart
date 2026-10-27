@@ -1,9 +1,8 @@
-/// HTTP API client for the Credit Bill System PHP backend.
-///
-/// Provides GET, POST, PUT, DELETE methods with JSON handling, configurable
-/// timeouts, Bearer token authentication, and consistent error mapping to
-/// the domain exception hierarchy.
-library core.network.api_client;
+// HTTP API client for the Credit Bill System PHP backend.
+//
+// Provides GET, POST, PUT, DELETE methods with JSON handling, configurable
+// timeouts, Bearer token authentication, and consistent error mapping to
+// the domain exception hierarchy.
 
 import 'dart:async';
 import 'dart:convert';

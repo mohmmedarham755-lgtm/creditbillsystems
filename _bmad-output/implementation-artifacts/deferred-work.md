@@ -4,15 +4,19 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-credit-card-data-model-subcollection-repository.md`
   summary: Show an authentication loading state until persisted-session initialization completes.
   evidence: `AuthProvider` tracks `isInitialized`, but `AuthGate` does not consult it before rendering the login screen.
+  status: done — `AuthGate` now renders `_AuthLoadingState` while `!authProvider.isInitialized`
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-credit-card-data-model-subcollection-repository.md`
   summary: Preserve authenticated state and report logout failures when Firebase sign-out fails.
   evidence: `AuthProvider.logout` catches sign-out failures, clears local state, and the dashboard navigates to login regardless.
+  status: done — `logout()` preserves state + sets `errorMessage` on failure; dashboard shows error SnackBar and skips redirect
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-credit-card-data-model-subcollection-repository.md`
   summary: Make account creation recoverable if writing the Firestore profile fails after Firebase Auth registration succeeds.
   evidence: `AuthRepositoryImpl.registerWithEmailAndPassword` creates the auth account before writing the user document and does not roll it back on write failure.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-credit-card-data-model-subcollection-repository.md`
   summary: Add exact 30% and 50% boundary tests for credit utilization health tiers.
   evidence: `test/core/credit_calculator_test.dart` tests representative values but not either defined tier boundary.
+  status: done — boundary tests already present (exactly 30%, exactly 50%, rounding-to-30%, rounding-to-50%, just-below-30%)
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-credit-card-data-model-subcollection-repository.md`
   summary: Validate card financial and billing-cycle ranges as part of card-entry validation.
   evidence: Those constraints belong to Story 2.2; Story 2.1 defines the model fields but no value ranges.

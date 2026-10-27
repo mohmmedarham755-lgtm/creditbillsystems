@@ -1,12 +1,10 @@
-/// Payments API service for the Credit Bill System PHP backend.
-///
-/// Wraps [HttpApiClient] to provide payment operations.
-/// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
-library core.network.payments_api;
+// Payments API service for the Credit Bill System PHP backend.
+//
+// Wraps [HttpApiClient] to provide payment operations.
+// Uses [HttpApiClient] for HTTP transport and [parsers] for response validation.
 
 import 'package:creditbillsytems/core/network/api_client.dart';
 import 'package:creditbillsytems/core/network/parsers.dart';
-import 'package:creditbillsytems/core/network/api_response.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/features/payments/domain/payment_model.dart';
 
@@ -89,6 +87,23 @@ class PaymentsApi {
     );
 
     return _parsePayment(response.data!);
+  }
+
+  /// Deletes a payment by ID.
+  ///
+  /// The backend should atomically:
+  /// 1. Delete the payment record
+  /// 2. Restore the bill's remaining_balance (+ payment amount)
+  /// 3. Recalculate the bill's status
+  /// 4. Restore the card's current_balance (- payment amount)
+  /// Throws [ValidationException] if ID is missing (400).
+  /// Throws [DatabaseException] if payment not found (404) or has associated constraints (409).
+  /// Throws [AuthException] if token is invalid (401).
+  Future<void> deletePayment(String id) async {
+    await _client.post<void>(
+      'payments/delete.php',
+      body: {'id': id},
+    );
   }
 
   PaymentModel _parsePayment(Map<String, dynamic> json) {

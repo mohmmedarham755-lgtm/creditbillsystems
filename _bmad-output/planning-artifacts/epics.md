@@ -312,19 +312,20 @@ So that I have a single command center for my personal credit status.
 
 Users can record monthly statement bills against specific cards, track payment deadlines, and view bills categorized across four lifecycle states: Unpaid, Partially Paid, Paid, and Overdue.
 
-### Story 4.1: Bill Domain Model & Subcollection Repository
+### Story 4.1: Bill Domain Model & PHP Repository
 
 As a developer,
-I want to define the `BillModel` entity and Firestore repository for bill statements,
-So that billing records are securely stored under `/users/{uid}/bills` with complete status metadata.
+I want to define the `BillModel` entity and PHP repository for bill statements,
+So that billing records are securely managed under user-scoped PHP API endpoints with complete status metadata.
 
 **Acceptance Criteria:**
 
 **Given** the domain layer for bills
 **When** `BillModel` is instantiated
 **Then** it includes `id`, `cardId`, `statementDate`, `dueDate`, `totalAmountDue`, `remainingBalance`, `minimumDue`, and `BillStatus`
-**And** `BillRepositoryImpl` streams bills ordered by `dueDate` ascending
-**And** Firestore security rules verify read and write access are restricted to the document owner.
+**And** `PhpBillRepository.watchBills()` yields bills ordered by `dueDate` ascending
+**And** User isolation is enforced through the existing Bearer-token PHP API
+**And** Existing typed exception handling (`DatabaseException`, `AuthException`, `NetworkException`) is preserved
 
 ### Story 4.2: Record Monthly Bill Statement with Due Date Prediction
 

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -60,7 +59,7 @@ void main() {
       );
     });
 
-    Future<http.Client> _createMockClient({
+    Future<http.Client> createMockClient({
       required int statusCode,
       required Map<String, dynamic> responseBody,
       Duration? delay,
@@ -76,7 +75,7 @@ void main() {
 
     group('getPayments', () {
       test('returns list of PaymentModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -118,7 +117,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );
@@ -135,7 +134,7 @@ void main() {
 
     group('getPayment', () {
       test('returns PaymentModel on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -163,7 +162,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Payment not found.'},
         );
@@ -180,7 +179,7 @@ void main() {
 
     group('recordPayment', () {
       test('returns created PaymentModel on 201', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 201,
           responseBody: {
             'success': true,
@@ -213,7 +212,7 @@ void main() {
       });
 
       test('throws ValidationException on 400 (amount exceeds balance)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Payment amount exceeds remaining balance of 50.00.'},
         );
@@ -232,7 +231,7 @@ void main() {
       });
 
       test('throws ValidationException on 400 (card/bill mismatch)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Payment card does not match bill card.'},
         );
@@ -251,7 +250,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404 (bill not found)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Bill not found or access denied.'},
         );
@@ -270,7 +269,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404 (card not found)', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Card not found or access denied.'},
         );

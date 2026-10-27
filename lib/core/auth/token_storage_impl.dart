@@ -1,11 +1,10 @@
-/// Secure storage implementation of [TokenStorage] using [flutter_secure_storage].
-///
-/// Stores the bearer token, user ID, and ISO 8601 expiry timestamp.
-///
-/// Note: On the web platform, [flutter_secure_storage] uses localStorage,
-/// which is NOT secure against XSS attacks. Do not use this for highly
-/// sensitive applications on the web without a custom implementation.
-library core.auth.token_storage_impl;
+// Secure storage implementation of [TokenStorage] using [flutter_secure_storage].
+//
+// Stores the bearer token, user ID, and ISO 8601 expiry timestamp.
+//
+// Note: On the web platform, [flutter_secure_storage] uses localStorage,
+// which is NOT secure against XSS attacks. Do not use this for highly
+// sensitive applications on the web without a custom implementation.
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'token_storage.dart';

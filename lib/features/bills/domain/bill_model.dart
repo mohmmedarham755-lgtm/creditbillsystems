@@ -23,20 +23,51 @@ class BillModel {
   });
 
   /// Builds a bill from its API data and document ID.
+  /// Supports both PHP field names (total_amount, paid_amount, minimum_payment)
+  /// and Flutter-compatible names (total_amount_due, remaining_balance, minimum_due).
   factory BillModel.fromMap(Map<String, dynamic> map, {required String id}) {
+    // Support both PHP and Flutter field names
+    final totalAmount = (map['total_amount_due'] ?? map['total_amount'] as num).toDouble();
+    final paidAmount = (map['paid_amount'] as num?)?.toDouble() ?? 0.0;
+    final remainingBalance = (map['remaining_balance'] as num?)?.toDouble() ?? (totalAmount - paidAmount);
+    final minimumDue = (map['minimum_due'] ?? map['minimum_payment'] as num).toDouble();
+
+    // Status mapping: PHP uses 'pending'/'paid', Flutter uses 'unpaid'/'partiallyPaid'/'paid'/'overdue'
+    final rawStatus = map['status'] as String;
+    final status = _mapStatus(rawStatus, totalAmount, paidAmount);
+
     return BillModel(
       id: id,
       cardId: map['card_id'] as String,
       statementDate: DateTime.parse(map['statement_date'] as String),
       dueDate: DateTime.parse(map['due_date'] as String),
-      totalAmountDue: (map['total_amount_due'] as num).toDouble(),
-      remainingBalance: (map['remaining_balance'] as num).toDouble(),
-      minimumDue: (map['minimum_due'] as num).toDouble(),
-      status: BillStatus.values.firstWhere(
-        (status) => status.name == map['status'],
-        orElse: () => BillStatus.unpaid,
-      ),
+      totalAmountDue: totalAmount,
+      remainingBalance: remainingBalance,
+      minimumDue: minimumDue,
+      status: status,
     );
+  }
+
+  /// Maps PHP status values to Flutter BillStatus enum.
+  static BillStatus _mapStatus(String rawStatus, double totalAmount, double paidAmount) {
+    switch (rawStatus) {
+      case 'paid':
+        return BillStatus.paid;
+      case 'overdue':
+        return BillStatus.overdue;
+      case 'partiallyPaid':
+        return BillStatus.partiallyPaid;
+      case 'unpaid':
+        return BillStatus.unpaid;
+      case 'pending':
+        // Legacy status: map based on paid amount
+        if (paidAmount > 0.01) {
+          return BillStatus.partiallyPaid;
+        }
+        return BillStatus.unpaid;
+      default:
+        return BillStatus.unpaid;
+    }
   }
 
   /// Converts the bill to data for API request.

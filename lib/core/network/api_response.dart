@@ -5,10 +5,6 @@
 /// - Error:   `{ "success": false, "error": "...", "message": "..." }`
 ///
 /// This class parses the envelope and provides typed access to the [data] field.
-library core.network.api_response;
-
-import 'dart:convert';
-
 /// Represents a parsed API response.
 ///
 /// [success] indicates whether the request succeeded.

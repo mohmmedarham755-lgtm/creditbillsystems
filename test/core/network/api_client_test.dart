@@ -164,7 +164,7 @@ void main() {
       );
     });
 
-    Future<http.Client> _createMockClient({
+    Future<http.Client> createMockClient({
       required int statusCode,
       required Map<String, dynamic> responseBody,
       Duration? delay,
@@ -180,7 +180,7 @@ void main() {
 
     group('GET requests', () {
       test('returns parsed data on 200 OK', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {
             'success': true,
@@ -207,7 +207,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Card ID is required'},
         );
@@ -225,7 +225,7 @@ void main() {
       });
 
       test('throws AuthException on 401', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 401,
           responseBody: {'success': false, 'error': 'Unauthorized'},
         );
@@ -243,7 +243,7 @@ void main() {
       });
 
       test('throws DatabaseException on 404', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 404,
           responseBody: {'success': false, 'error': 'Card not found'},
         );
@@ -261,7 +261,7 @@ void main() {
       });
 
       test('throws NetworkException on 500', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 500,
           responseBody: {'success': false, 'error': 'Database error'},
         );
@@ -387,7 +387,7 @@ void main() {
       });
 
       test('throws ValidationException on 400', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 400,
           responseBody: {'success': false, 'error': 'Card name is required'},
         );
@@ -405,7 +405,7 @@ void main() {
       });
 
       test('throws DatabaseException on 409 conflict', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 409,
           responseBody: {'success': false, 'error': 'Card already exists'},
         );
@@ -425,7 +425,7 @@ void main() {
 
     group('PUT requests', () {
       test('sends JSON body and returns parsed data on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {'success': true, 'data': {'id': 'card-1', 'card_name': 'Updated'}},
         );
@@ -449,7 +449,7 @@ void main() {
 
     group('DELETE requests', () {
       test('sends request and returns success on 200', () async {
-        final mockClient = await _createMockClient(
+        final mockClient = await createMockClient(
           statusCode: 200,
           responseBody: {'success': true, 'message': 'Card deleted'},
         );

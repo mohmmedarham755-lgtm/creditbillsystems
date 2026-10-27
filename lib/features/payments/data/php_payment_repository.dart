@@ -1,8 +1,7 @@
-/// PHP backend implementation of [PaymentRepository].
-///
-/// Delegates payment operations to [PaymentsApi] and maps between domain models
-/// and API request/response DTOs.
-library features.payments.data.php_payment_repository;
+// PHP backend implementation of [PaymentRepository].
+//
+// Delegates payment operations to [PaymentsApi] and maps between domain models
+// and API request/response DTOs.
 
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
 import 'package:creditbillsytems/core/network/payments_api.dart';
@@ -82,5 +81,23 @@ class PhpPaymentRepository implements PaymentRepository {
     }
     // Yield empty stream to signal completion
     yield <PaymentModel>[];
+  }
+
+  @override
+  Future<void> deletePayment({
+    required String userId,
+    required String paymentId,
+  }) async {
+    try {
+      await _paymentsApi.deletePayment(paymentId);
+    } on AuthException {
+      rethrow;
+    } on ValidationException {
+      rethrow;
+    } on DatabaseException {
+      rethrow;
+    } on NetworkException catch (e) {
+      throw DatabaseException('Failed to delete payment: ${e.message}', code: e.code);
+    }
   }
 }

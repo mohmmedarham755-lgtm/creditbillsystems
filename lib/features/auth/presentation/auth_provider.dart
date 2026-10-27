@@ -170,7 +170,6 @@ class AuthProvider extends ChangeNotifier {
       clearUser();
     } catch (e) {
       _errorMessage = 'Logout failed. Please try again.';
-      debugPrint('Logout error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();

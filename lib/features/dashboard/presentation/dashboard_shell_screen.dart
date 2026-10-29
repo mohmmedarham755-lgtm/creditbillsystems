@@ -383,39 +383,6 @@ class _BillsErrorState extends StatelessWidget {
       );
 }
 
-/// Shows when there are no bills.
-class _NoBillsState extends StatelessWidget {
-  const _NoBillsState();
-
-  @override
-  Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.receipt_long_outlined,
-                size: 64,
-                color: AppColors.brandPrimaryLight,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'No upcoming bills.',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Bills you log will appear here.',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
 /// Displays the top upcoming bills sorted by due date (closest first).
 class _UpcomingBillsList extends StatelessWidget {
   final List<BillModel> bills;
@@ -429,7 +396,11 @@ class _UpcomingBillsList extends StatelessWidget {
     final topThree = sorted.take(3).toList();
 
     if (topThree.isEmpty) {
-      return const _NoBillsState();
+      return const Scaffold(
+        body: Center(
+          child: Text('No bills found'),
+        ),
+      );
     }
 
     return Column(

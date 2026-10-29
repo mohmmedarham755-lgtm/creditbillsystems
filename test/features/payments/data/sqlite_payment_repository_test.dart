@@ -1,6 +1,6 @@
 import 'package:creditbillsytems/core/database/database_helper.dart';
 import 'package:creditbillsytems/core/errors/app_exceptions.dart';
-import 'package:creditbillsytems/features/bills/domain/bill_status.dart';
+// import 'package:creditbillsytems/features/bills/domain/bill_status.dart';
 import 'package:creditbillsytems/features/payments/data/sqlite_payment_repository.dart';
 import 'package:creditbillsytems/features/payments/domain/payment_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -127,35 +127,49 @@ void main() {
       DatabaseHelper.resetInstance();
     });
 
-    test('recordPayment updates payment, bill balance/status, and card balance atomically', () async {
-      final payment = PaymentModel(
-        id: '',
-        billId: 'bill-1',
-        cardId: 'card-1',
-        amount: 250.0,
-        date: DateTime.now(),
-        note: 'Partial payment',
-      );
+    test(
+      'recordPayment updates payment, bill balance/status, and card balance atomically',
+      () async {
+        final payment = PaymentModel(
+          id: '',
+          billId: 'bill-1',
+          cardId: 'card-1',
+          amount: 250.0,
+          date: DateTime.now(),
+          note: 'Partial payment',
+        );
 
-      final recorded = await repository.recordPayment(userId: 'user-1', payment: payment);
-      expect(recorded.id, isNotEmpty);
-      expect(recorded.amount, equals(250.0));
+        final recorded = await repository.recordPayment(
+          userId: 'user-1',
+          payment: payment,
+        );
+        expect(recorded.id, isNotEmpty);
+        expect(recorded.amount, equals(250.0));
 
-      // 1. Verify payment record exists
-      final payments = await repository.getPayments(userId: 'user-1');
-      expect(payments.length, equals(1));
-      expect(payments.first.id, equals(recorded.id));
+        // 1. Verify payment record exists
+        final payments = await repository.getPayments(userId: 'user-1');
+        expect(payments.length, equals(1));
+        expect(payments.first.id, equals(recorded.id));
 
-      // 2. Verify bill remaining balance and status updated to partiallyPaid
-      final billRows = await db.query('bills', where: 'id = ?', whereArgs: ['bill-1']);
-      expect(billRows.length, equals(1));
-      expect(billRows.first['remaining_balance'], equals(150.0));
-      expect(billRows.first['status'], equals('partiallyPaid'));
+        // 2. Verify bill remaining balance and status updated to partiallyPaid
+        final billRows = await db.query(
+          'bills',
+          where: 'id = ?',
+          whereArgs: ['bill-1'],
+        );
+        expect(billRows.length, equals(1));
+        expect(billRows.first['remaining_balance'], equals(150.0));
+        expect(billRows.first['status'], equals('partiallyPaid'));
 
-      // 3. Verify card current balance reduced from 400 to 150
-      final cardRows = await db.query('cards', where: 'id = ?', whereArgs: ['card-1']);
-      expect(cardRows.first['current_balance'], equals(150.0));
-    });
+        // 3. Verify card current balance reduced from 400 to 150
+        final cardRows = await db.query(
+          'cards',
+          where: 'id = ?',
+          whereArgs: ['card-1'],
+        );
+        expect(cardRows.first['current_balance'], equals(150.0));
+      },
+    );
 
     test('recordPayment for remaining total marks bill as paid', () async {
       final payment = PaymentModel(
@@ -169,11 +183,19 @@ void main() {
 
       await repository.recordPayment(userId: 'user-1', payment: payment);
 
-      final billRows = await db.query('bills', where: 'id = ?', whereArgs: ['bill-1']);
+      final billRows = await db.query(
+        'bills',
+        where: 'id = ?',
+        whereArgs: ['bill-1'],
+      );
       expect(billRows.first['remaining_balance'], equals(0.0));
       expect(billRows.first['status'], equals('paid'));
 
-      final cardRows = await db.query('cards', where: 'id = ?', whereArgs: ['card-1']);
+      final cardRows = await db.query(
+        'cards',
+        where: 'id = ?',
+        whereArgs: ['card-1'],
+      );
       expect(cardRows.first['current_balance'], equals(0.0));
     });
 
@@ -188,42 +210,66 @@ void main() {
 
       expect(
         () => repository.recordPayment(userId: 'user-1', payment: payment),
-        throwsA(isA<ValidationException>().having((e) => e.code, 'code', 'AMOUNT_EXCEEDS_BALANCE')),
-      );
-
-      // Verify no changes occurred
-      final billRows = await db.query('bills', where: 'id = ?', whereArgs: ['bill-1']);
-      expect(billRows.first['remaining_balance'], equals(400.0));
-    });
-
-    test('deletePayment restores bill remaining balance and card current balance', () async {
-      // First, record a 150 payment
-      final recorded = await repository.recordPayment(
-        userId: 'user-1',
-        payment: PaymentModel(
-          id: 'pay-1',
-          billId: 'bill-1',
-          cardId: 'card-1',
-          amount: 150.0,
-          date: DateTime.now(),
+        throwsA(
+          isA<ValidationException>().having(
+            (e) => e.code,
+            'code',
+            'AMOUNT_EXCEEDS_BALANCE',
+          ),
         ),
       );
 
-      // Now delete that payment
-      await repository.deletePayment(userId: 'user-1', paymentId: recorded.id);
-
-      // Verify payment was deleted
-      final payments = await repository.getPayments(userId: 'user-1');
-      expect(payments, isEmpty);
-
-      // Verify bill was restored back to 400.0 and unpaid
-      final billRows = await db.query('bills', where: 'id = ?', whereArgs: ['bill-1']);
+      // Verify no changes occurred
+      final billRows = await db.query(
+        'bills',
+        where: 'id = ?',
+        whereArgs: ['bill-1'],
+      );
       expect(billRows.first['remaining_balance'], equals(400.0));
-      expect(billRows.first['status'], equals('unpaid'));
-
-      // Verify card was restored back to 400.0
-      final cardRows = await db.query('cards', where: 'id = ?', whereArgs: ['card-1']);
-      expect(cardRows.first['current_balance'], equals(400.0));
     });
+
+    test(
+      'deletePayment restores bill remaining balance and card current balance',
+      () async {
+        // First, record a 150 payment
+        final recorded = await repository.recordPayment(
+          userId: 'user-1',
+          payment: PaymentModel(
+            id: 'pay-1',
+            billId: 'bill-1',
+            cardId: 'card-1',
+            amount: 150.0,
+            date: DateTime.now(),
+          ),
+        );
+
+        // Now delete that payment
+        await repository.deletePayment(
+          userId: 'user-1',
+          paymentId: recorded.id,
+        );
+
+        // Verify payment was deleted
+        final payments = await repository.getPayments(userId: 'user-1');
+        expect(payments, isEmpty);
+
+        // Verify bill was restored back to 400.0 and unpaid
+        final billRows = await db.query(
+          'bills',
+          where: 'id = ?',
+          whereArgs: ['bill-1'],
+        );
+        expect(billRows.first['remaining_balance'], equals(400.0));
+        expect(billRows.first['status'], equals('unpaid'));
+
+        // Verify card was restored back to 400.0
+        final cardRows = await db.query(
+          'cards',
+          where: 'id = ?',
+          whereArgs: ['card-1'],
+        );
+        expect(cardRows.first['current_balance'], equals(400.0));
+      },
+    );
   });
 }

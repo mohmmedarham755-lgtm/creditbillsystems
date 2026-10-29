@@ -67,17 +67,28 @@ class ApiConfig {
   String url(String path) {
     final Uri base = Uri.parse(baseUrl);
     final String basePath = base.path;
-    final String normalizedBasePath = basePath.endsWith('/') ? basePath : '$basePath/';
-    
+    final String normalizedBasePath = basePath.endsWith('/')
+        ? basePath
+        : '$basePath/';
+
     // Split path into path and query components
     final int queryIndex = path.indexOf('?');
-    final String pathOnly = queryIndex >= 0 ? path.substring(0, queryIndex) : path;
-    final String queryOnly = queryIndex >= 0 ? path.substring(queryIndex + 1) : '';
-    
-    final String normalizedPath = pathOnly.startsWith('/') ? pathOnly.substring(1) : pathOnly;
+    final String pathOnly = queryIndex >= 0
+        ? path.substring(0, queryIndex)
+        : path;
+    final String queryOnly = queryIndex >= 0
+        ? path.substring(queryIndex + 1)
+        : '';
+
+    final String normalizedPath = pathOnly.startsWith('/')
+        ? pathOnly.substring(1)
+        : pathOnly;
     final String combinedPath = '$normalizedBasePath$normalizedPath';
-    
-    final Uri resolved = base.replace(path: combinedPath, query: queryOnly.isNotEmpty ? queryOnly : null);
+
+    final Uri resolved = base.replace(
+      path: combinedPath,
+      query: queryOnly.isNotEmpty ? queryOnly : null,
+    );
     return resolved.toString();
   }
 

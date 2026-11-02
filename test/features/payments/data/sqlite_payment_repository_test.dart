@@ -118,7 +118,7 @@ void main() {
       });
 
       helper = DatabaseHelper.withDatabase(db);
-      repository = SqlitePaymentRepository(dbHelper: helper);
+      repository = SqlitePaymentRepository(dbHelper: helper, nowProvider: () => DateTime(2026, 10, 10));
     });
 
     tearDown(() async {

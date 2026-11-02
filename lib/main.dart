@@ -168,12 +168,8 @@ class _DatabaseInitScreenState extends State<_DatabaseInitScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize database in background, mark ready when done
-    Future.delayed(const Duration(milliseconds: 500), () {
-      // Note: In a real app, you'd check actual db status here
-      // For now, we'll just wait a bit and then proceed
-      setState(() => _isDatabaseReady = true);
-    });
+    // Mark ready immediately; database initializes in background
+    setState(() => _isDatabaseReady = true);
   }
 
   @override

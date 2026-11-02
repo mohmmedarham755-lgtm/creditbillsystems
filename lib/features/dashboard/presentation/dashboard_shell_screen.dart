@@ -396,10 +396,9 @@ class _UpcomingBillsList extends StatelessWidget {
     final topThree = sorted.take(3).toList();
 
     if (topThree.isEmpty) {
-      return const Scaffold(
-        body: Center(
-          child: Text('No bills found'),
-        ),
+      // Fixed: use a simple Center widget with the expected text.
+      return const Center(
+        child: Text('No upcoming bills.'),
       );
     }
 

@@ -16,11 +16,11 @@ class AppColors {
   static const Color borderSubtle = Color(0xFFE2E8F0);
 
   // Status & Health Tiers (Light Mode)
-  static const Color healthHealthy = Color(0xFF10B981);       // <30% Utilization
+  static const Color healthHealthy = Color(0xFF10B981);
   static const Color healthHealthyBg = Color(0xFFECFDF5);
-  static const Color healthModerate = Color(0xFFF59E0B);      // 30-50% Utilization
+  static const Color healthModerate = Color(0xFFF59E0B);
   static const Color healthModerateBg = Color(0xFFFFFBEB);
-  static const Color healthRisk = Color(0xFFEF4444);          // >50% Utilization
+  static const Color healthRisk = Color(0xFFEF4444);
   static const Color healthRiskBg = Color(0xFFFEF2F2);
 
   // Dark Mode Palette
@@ -35,4 +35,4 @@ class AppColors {
   static const Color healthHealthyDark = Color(0xFF34D399);
   static const Color healthModerateDark = Color(0xFFFBBF24);
   static const Color healthRiskDark = Color(0xFFF87171);
-}
+}

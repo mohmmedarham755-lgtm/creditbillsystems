@@ -17,10 +17,12 @@ class SqlitePaymentRepository implements PaymentRepository {
   /// Optional callback invoked when a payment modifies bills or cards,
   /// so other repositories or providers can refresh their reactive streams.
   final void Function(String userId)? onDataMutated;
+  final DateTime Function()? nowProvider;
 
   SqlitePaymentRepository({
     DatabaseHelper? dbHelper,
     this.onDataMutated,
+    this.nowProvider,
   }) : _dbHelper = dbHelper ?? DatabaseHelper();
 
   StreamController<List<PaymentModel>> _getController(String userId) {
@@ -96,7 +98,7 @@ class SqlitePaymentRepository implements PaymentRepository {
       }
 
       // 2. Insert payment record
-      final now = DateTime.now();
+      final now = nowProvider?.call() ?? DateTime.now();
       await txn.insert('payments', {
         'id': paymentId,
         'user_id': userId,
@@ -255,7 +257,7 @@ class SqlitePaymentRepository implements PaymentRepository {
 
         final newStatus = BillStatusEvaluator.evaluate(
           bill: dummyBill,
-          currentDate: DateTime.now(),
+          currentDate: nowProvider?.call() ?? DateTime.now(),
         );
 
         await txn.update(

@@ -1,6 +1,6 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'core/auth/admin_initializer.dart';
 import 'package:provider/provider.dart';
-
 import 'app.dart';
 import 'core/theme/app_theme.dart';
 import 'core/auth/token_storage_impl.dart';
@@ -19,6 +19,9 @@ import 'features/payments/data/sqlite_payment_repository.dart';
 import 'features/payments/domain/payment_repository.dart';
 import 'features/calendar/data/calendar_repository_impl.dart';
 import 'features/calendar/presentation/calendar_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 Widget buildAppWithProviders({
   Widget child = const CreditBillApp(),
@@ -32,11 +35,13 @@ Widget buildAppWithProviders({
   final helper = dbHelper ?? DatabaseHelper();
   final tokenStorage = TokenStorageImpl();
 
-  final authRepo = authRepository ??
+  final authRepo =
+      authRepository ??
       SqliteAuthRepository(dbHelper: helper, tokenStorage: tokenStorage);
   final cardRepo = cardRepository ?? SqliteCardRepository(dbHelper: helper);
   final billRepo = billRepository ?? SqliteBillRepository(dbHelper: helper);
-  final paymentRepo = paymentRepository ??
+  final paymentRepo =
+      paymentRepository ??
       SqlitePaymentRepository(
         dbHelper: helper,
         onDataMutated: (userId) {
@@ -65,7 +70,8 @@ Widget buildAppWithProviders({
           paymentRepository: paymentRepo,
         ),
         update: (_, auth, bills) {
-          final billProvider = bills ??
+          final billProvider =
+              bills ??
               BillProvider(
                 billRepository: billRepo,
                 paymentRepository: paymentRepo,
@@ -79,7 +85,8 @@ Widget buildAppWithProviders({
           repository: CalendarRepositoryImpl(billRepository: billRepo),
         ),
         update: (_, auth, calendar) {
-          final provider = calendar ??
+          final provider =
+              calendar ??
               CalendarProvider(
                 repository: CalendarRepositoryImpl(billRepository: billRepo),
               );
@@ -92,18 +99,28 @@ Widget buildAppWithProviders({
   );
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize notification service best-effort, don't block app startup
+
+  // Initialize SQLite factory for Flutter Web
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  }
+
+  // Initialize notification service
   await _initNotificationService();
-  
-  // Initialize database in background after app starts
+
+  // Initialize database before starting the app
   final dbHelper = DatabaseHelper();
-  _initializeDatabaseInBackground(dbHelper);
-  
-  // Start app with a loading indicator while database initializes in background
-  runApp(_buildAppWithDatabaseInit(dbHelper));
+
+  await dbHelper.database;
+
+  // Initialize admin account
+  final tokenStorage = TokenStorageImpl();
+  await ensureAdminAccount(dbHelper, tokenStorage);
+
+  // Start application
+  runApp(buildAppWithProviders(dbHelper: dbHelper));
 }
 
 /// Initialize notification service best-effort, don't block app startup
@@ -120,6 +137,9 @@ void _initializeDatabaseInBackground(DatabaseHelper dbHelper) async {
   try {
     // Wait for database to be initialized but don't block UI
     await dbHelper.database;
+    // Ensure admin account exists (once)
+    final tokenStorage = TokenStorageImpl();
+    await ensureAdminAccount(dbHelper, tokenStorage);
   } catch (_) {
     // Database initialization failure won't crash the app
   }
@@ -178,7 +198,7 @@ class _DatabaseInitScreenState extends State<_DatabaseInitScreen> {
       // Database is initialized, show the main app with providers
       return buildAppWithProviders();
     }
-    
+
     return Scaffold(
       body: Center(
         child: Column(

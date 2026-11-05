@@ -18,28 +18,11 @@ class AuthGate extends StatelessWidget {
       'AuthGate: isInitialized=${authProvider.isInitialized}, isAuthenticated=${authProvider.isAuthenticated}',
     );
 
-    // Show a loading state while auth initialization is in progress so the app
-    // does not flash the login screen before the persisted session is resolved.
-    // if (!authProvider.isInitialized) {
-    //   print('auth loading state');
-    //   return const _AuthLoadingState();
-    // }
-
     if (authProvider.isAuthenticated) {
       return const DashboardShellScreen();
     }
 
     print('login screen');
     return const LoginScreen();
-  }
-}
-
-/// Shows while the persisted auth session is being initialized.
-class _AuthLoadingState extends StatelessWidget {
-  const _AuthLoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
   }
 }

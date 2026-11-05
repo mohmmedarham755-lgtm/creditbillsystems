@@ -76,13 +76,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
+      appBar: AppBar(title: const Text('Create Account')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -205,7 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
-                              hintText: 'name@example.com',
+                              hintText: 'admin@gmail.com',
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
                             validator: (value) {
@@ -310,8 +311,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
-                      onPressed:
-                          authProvider.isLoading ? null : _handleRegister,
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : _handleRegister,
                       child: authProvider.isLoading
                           ? const SizedBox(
                               width: 20,
@@ -344,7 +346,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Navigator.of(context).pop();
                           } else {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
                             );
                           }
                         },

@@ -46,7 +46,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _emailSent = true;
       });
     } else {
-      final errorMsg = authProvider.errorMessage ??
+      final errorMsg =
+          authProvider.errorMessage ??
           'Unable to send password reset email. Please try again.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -65,13 +66,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final authProvider = context.watch<AuthProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reset Password'),
-      ),
+      appBar: AppBar(title: const Text('Reset Password')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: _emailSent
                 ? _buildSuccessView(context, isDark, theme)
                 : _buildFormView(context, isDark, theme, authProvider),
@@ -113,7 +115,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             'Enter your registered email address and we will send you a link to reset your password.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 28),
@@ -270,7 +274,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -278,7 +284,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   'Please follow the link in your email to reset your password. Be sure to check your spam or junk folder.',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondary,
                   ),
                 ),
               ],

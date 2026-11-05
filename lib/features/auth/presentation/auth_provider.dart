@@ -21,7 +21,7 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required AuthRepository authRepository,
     bool listenToAuthChanges = true,
-  })  : _authRepository = authRepository {
+  }) : _authRepository = authRepository {
     final initialUser = _authRepository.currentUser;
     if (initialUser != null) {
       _userId = initialUser.uid;
@@ -59,10 +59,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Authenticates an existing user with [email] and [password].
   /// Returns `true` if login succeeded, `false` otherwise.
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -213,5 +210,3 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-
-

@@ -179,9 +179,7 @@ class BillEntryFormState extends State<BillEntryForm> {
 
     Navigator.of(context).pop();
     scaffoldMessenger?.showSnackBar(
-      const SnackBar(
-        content: Text('Bill logged successfully.'),
-      ),
+      const SnackBar(content: Text('Bill logged successfully.')),
     );
   }
 
@@ -202,10 +200,8 @@ class BillEntryFormState extends State<BillEntryForm> {
         decoration: InputDecoration(labelText: label),
         items: _cards
             .map(
-              (card) => DropdownMenuItem(
-                value: card,
-                child: Text(itemBuilder(card)),
-              ),
+              (card) =>
+                  DropdownMenuItem(value: card, child: Text(itemBuilder(card))),
             )
             .toList(),
         onChanged: onChanged,
@@ -257,90 +253,97 @@ class BillEntryFormState extends State<BillEntryForm> {
     final isSaving = billProvider.isSaving;
     final errorMessage = billProvider.errorMessage;
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Log New Bill',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (_cards.isEmpty)
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          48 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  'No credit cards available. Add a card first.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  'Log New Bill',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              _dropdownField(
-                label: 'Credit card',
-                key: const Key('bill-entry.card'),
-                value: selectedCard,
-                onChanged: onCardSelected,
-                itemBuilder: _cardName,
-                validator: _validateCard,
-              ),
-              _textField(
-                label: 'Statement date',
-                key: const Key('bill-entry.statement-date'),
-                controller: _statementDateController,
-                validator: _validateStatementDate,
-                onTap: _pickStatementDate,
-                readOnly: true,
-              ),
-              if (_estimatedDueDate != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    'Estimated due date: ${DateFormatter.formatDisplay(_estimatedDueDate!)}',
+                const SizedBox(height: 20),
+                if (_cards.isEmpty)
+                  Text(
+                    'No credit cards available. Add a card first.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                _dropdownField(
+                  label: 'Credit card',
+                  key: const Key('bill-entry.card'),
+                  value: selectedCard,
+                  onChanged: onCardSelected,
+                  itemBuilder: _cardName,
+                  validator: _validateCard,
                 ),
-              _textField(
-                label: 'Statement amount',
-                key: const Key('bill-entry.statement-amount'),
-                controller: _statementAmountController,
-                validator: _validateAmount,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+                _textField(
+                  label: 'Statement date',
+                  key: const Key('bill-entry.statement-date'),
+                  controller: _statementDateController,
+                  validator: _validateStatementDate,
+                  onTap: _pickStatementDate,
+                  readOnly: true,
                 ),
-              ),
-              if (errorMessage != null) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    'Could not log bill: $errorMessage',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                if (_estimatedDueDate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Estimated due date: ${DateFormatter.formatDisplay(_estimatedDueDate!)}',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    key: const Key('bill-entry.error'),
-                    semanticsLabel: 'Error logging bill: $errorMessage',
+                  ),
+                _textField(
+                  label: 'Statement amount',
+                  key: const Key('bill-entry.statement-amount'),
+                  controller: _statementAmountController,
+                  validator: _validateAmount,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
                 ),
+                if (errorMessage != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Could not log bill: $errorMessage',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      key: const Key('bill-entry.error'),
+                      semanticsLabel: 'Error logging bill: $errorMessage',
+                    ),
+                  ),
+                ],
+                ElevatedButton(
+                  key: const Key('bill-entry.save'),
+                  onPressed: (_cards.isEmpty || isSaving) ? null : _saveBill,
+                  child: isSaving
+                      ? Semantics(
+                          label: 'Saving bill',
+                          liveRegion: true,
+                          child: SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : const Text('Save Bill'),
+                ),
               ],
-              ElevatedButton(
-                key: const Key('bill-entry.save'),
-                onPressed:
-                    (_cards.isEmpty || isSaving) ? null : _saveBill,
-                child: isSaving
-                    ? Semantics(
-                        label: 'Saving bill',
-                        liveRegion: true,
-                        child: SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : const Text('Save Bill'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

@@ -244,6 +244,13 @@ void main() {
     });
 
     testWidgets('shows filter chips with correct labels', (tester) async {
+      tester.view.physicalSize = const Size(540, 1170);
+      tester.view.devicePixelRatio = 1.5;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       final authProvider = AuthProvider(
         authRepository: authRepository,
         listenToAuthChanges: false,
@@ -281,6 +288,19 @@ void main() {
       expect(find.text('Pending'), findsOneWidget);
       expect(find.text('Paid'), findsOneWidget);
       expect(find.text('Overdue'), findsOneWidget);
+      expect(
+        tester
+            .getSize(find.byKey(const Key('bills-tab.filter-segmented-button')))
+            .height,
+        greaterThanOrEqualTo(48),
+      );
+      for (final label in ['Pending', 'Paid', 'Overdue']) {
+        expect(tester.getSize(find.text(label)).height, lessThanOrEqualTo(24));
+      }
+
+      await tester.tap(find.text('Overdue'));
+      await tester.pump();
+      expect(billProvider.billFilter, BillStatus.overdue);
 
       authProvider.dispose();
       cardProvider.dispose();
@@ -334,7 +354,9 @@ void main() {
       paymentRepository.dispose();
     });
 
-    testWidgets('Pending filter shows only unpaid bills', (tester) async {
+    testWidgets('Pending filter shows unpaid and partially paid bill details', (
+      tester,
+    ) async {
       final authProvider = AuthProvider(
         authRepository: authRepository,
         listenToAuthChanges: false,
@@ -370,13 +392,21 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      // Only unpaid bill should be visible
-      expect(find.text('Card card-1'), findsOneWidget);
+      // Pending includes unpaid and partially paid bills.
+      expect(find.text('Card card-1'), findsNWidgets(2));
       expect(find.text('Due: 20 Dec 2026'), findsOneWidget);
       expect(find.text('Status: Unpaid'), findsOneWidget);
+      expect(find.text('Due: 25 Dec 2026'), findsOneWidget);
+      expect(find.text('Status: PartiallyPaid'), findsOneWidget);
       expect(find.text('Due: 20 Sep 2026'), findsNothing);
       expect(find.text('Due: 15 Sep 2026'), findsNothing);
-      expect(find.text('Due: 25 Dec 2026'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('bills-tab.bill-bill-partial')));
+      await tester.pumpAndSettle();
+      expect(find.byType(BillDetailScreen), findsOneWidget);
+      expect(find.text('Total amount due'), findsOneWidget);
+      expect(find.text('Remaining balance'), findsOneWidget);
+      expect(find.text('Minimum due'), findsOneWidget);
 
       authProvider.dispose();
       cardProvider.dispose();

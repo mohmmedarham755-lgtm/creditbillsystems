@@ -65,13 +65,20 @@ class BillProvider extends ChangeNotifier {
   }
 
   /// Bills filtered by the currently selected status filter.
-  /// When no filter is selected, returns all bills.
+  /// Pending includes unpaid and partially paid bills.
   List<BillModel> get filteredBills {
-    if (_billFilter == null) {
+    final filter = _billFilter;
+    if (filter == null) {
       return List.unmodifiable(_bills);
     }
     return List.unmodifiable(
-      _bills.where((bill) => bill.status == _billFilter).toList(),
+      _bills.where((bill) {
+        if (filter == BillStatus.unpaid) {
+          return bill.status == BillStatus.unpaid ||
+              bill.status == BillStatus.partiallyPaid;
+        }
+        return bill.status == filter;
+      }),
     );
   }
 

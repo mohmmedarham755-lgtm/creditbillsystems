@@ -123,7 +123,12 @@ class BillDetailScreen extends StatelessWidget {
         title: const Text('Bill Details'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          24,
+          16,
+          32 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -17,11 +17,11 @@ development_status:
   1-4-password-reset-recovery-secure-logout: done
   epic-1-retrospective: optional
 
-  epic-2: done
+  epic-2: in-progress
   2-1-credit-card-data-model-subcollection-repository: done
   2-2-add-new-credit-card-with-input-validation: done
   2-3-credit-card-carousel-portfolio-display: done
-  2-4-card-modification-deletion-with-safeguard-confirmation: done
+  2-4-card-modification-deletion-with-safeguard-confirmation: in-progress
   epic-2-retrospective: optional
 
 

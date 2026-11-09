@@ -28,6 +28,7 @@ Widget buildAppWithProviders({
   AuthProvider? authProvider,
   AuthRepository? authRepository,
   CardRepository? cardRepository,
+
   BillRepository? billRepository,
   PaymentRepository? paymentRepository,
   DatabaseHelper? dbHelper,
@@ -133,8 +134,8 @@ Future<void> _initNotificationService() async {
 }
 
 /// Initialize database in background after app starts
-void _initializeDatabaseInBackground(DatabaseHelper dbHelper) async {
-  try {
+void  (DatabaseHelper dbHelper) async {
+    try {
     // Wait for database to be initialized but don't block UI
     await dbHelper.database;
     // Ensure admin account exists (once)

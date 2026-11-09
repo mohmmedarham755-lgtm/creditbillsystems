@@ -287,24 +287,22 @@ class _SelectDayState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.calendar_month_outlined,
-                size: 48, color: AppColors.brandPrimary),
-            const SizedBox(height: 16),
-            Text('Select a date',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('Tap a day with a dot to see bills due that day.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center),
-          ],
+    return _CenteredDayPanel(
+      children: [
+        Icon(
+          Icons.calendar_month_outlined,
+          size: 48,
+          color: AppColors.brandPrimary,
         ),
-      ),
+        const SizedBox(height: 16),
+        Text('Select a date', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'Tap a day with a dot to see bills due that day.',
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }
@@ -314,22 +312,49 @@ class _NoBillsDayState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_outline,
-                size: 48, color: AppColors.healthHealthy),
-            const SizedBox(height: 16),
-            Text('No bills due',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('All clear for this date.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center),
-          ],
+    return _CenteredDayPanel(
+      children: [
+        Icon(
+          Icons.check_circle_outline,
+          size: 48,
+          color: AppColors.healthHealthy,
+        ),
+        const SizedBox(height: 16),
+        Text('No bills due', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'All clear for this date.',
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class _CenteredDayPanel extends StatelessWidget {
+  final List<Widget> children;
+
+  const _CenteredDayPanel({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32,
+                vertical: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: children,
+              ),
+            ),
+          ),
         ),
       ),
     );

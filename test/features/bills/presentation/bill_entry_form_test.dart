@@ -157,23 +157,25 @@ class _FakePaymentRepository implements PaymentRepository {
 Widget _formApp({
   required CardProvider cardProvider,
   required BillProvider billProvider,
+  bool openBillEntryFormAsSheet = false,
 }) {
-  return MaterialApp(
-    home: Scaffold(
-      body: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 800),
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 800),
-            child: ChangeNotifierProvider<CardProvider>.value(
-              value: cardProvider,
-              child: ChangeNotifierProvider<BillProvider>.value(
-                value: billProvider,
-                child: const BillEntryForm(),
-              ),
-            ),
-          ),
-        ),
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<CardProvider>.value(value: cardProvider),
+      ChangeNotifierProvider<BillProvider>.value(value: billProvider),
+    ],
+    child: MaterialApp(
+      home: Scaffold(
+        body: openBillEntryFormAsSheet
+            ? Builder(
+                builder: (context) => Center(
+                  child: ElevatedButton(
+                    onPressed: () => showBillEntryForm(context),
+                    child: const Text('Open bill form'),
+                  ),
+                ),
+              )
+            : const BillEntryForm(),
       ),
     ),
   );
@@ -312,27 +314,48 @@ void main() {
     });
 
     testWidgets('submits valid bill with correct fields', (tester) async {
+      tester.view.physicalSize = const Size(800, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewPadding = const FakeViewPadding(bottom: 24);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewPadding();
+      });
+
       await tester.pumpWidget(
-        _formApp(cardProvider: cardProvider, billProvider: billProvider),
+        _formApp(
+          cardProvider: cardProvider,
+          billProvider: billProvider,
+          openBillEntryFormAsSheet: true,
+        ),
       );
 
-      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.tap(find.text('Open bill form'));
+      await tester.pumpAndSettle();
+
+      final testCard = _testCard1.copyWith(
+        cardName: 'Visa',
+        bankName: 'Bank',
+        last4Digits: '12',
+      );
+      cardRepository.streamFor('user-1').add([testCard]);
       await tester.pumpAndSettle();
 
       // Select card
       await tester.tap(find.byKey(const Key('bill-entry.card')));
       await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('Visa Rewards'));
+      await tester.tap(find.textContaining('Visa'));
       await tester.pumpAndSettle();
 
       // Verify card is selected
-      expect(find.textContaining('Visa Rewards'), findsOneWidget);
+      expect(find.textContaining('Visa'), findsOneWidget);
 
       // Set selected card and statement date directly by accessing the form state
       final formState = tester.state<BillEntryFormState>(
         find.byType(BillEntryForm),
       );
-      formState.onCardSelected(_testCard1);
+      formState.onCardSelected(testCard);
       formState.onStatementDateChanged(DateTime(2026, 10, 1));
       await tester.pumpAndSettle();
 
@@ -343,8 +366,15 @@ void main() {
       );
       await tester.pump();
 
-      // Save - ensure button is visible
-      await tester.ensureVisible(find.byKey(const Key('bill-entry.save')));
+      // Check the button's natural modal position without forcing a scroll.
+      expect(
+        tester.getRect(find.byKey(const Key('bill-entry.save'))).bottom,
+        lessThanOrEqualTo(
+          tester.view.physicalSize.height -
+              tester.view.viewPadding.bottom -
+              16,
+        ),
+      );
       await tester.tap(find.byKey(const Key('bill-entry.save')));
       await tester.pumpAndSettle();
 

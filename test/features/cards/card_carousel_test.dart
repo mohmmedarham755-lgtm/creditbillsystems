@@ -163,6 +163,12 @@ void main() {
     final semantics = tester.ensureSemantics();
 
     expect(find.byTooltip('Actions for Travel Rewards'), findsOneWidget);
+    expect(
+      tester
+          .getSemantics(find.byKey(const Key('credit-card-tile.actions')))
+          .label,
+      contains('Actions for Travel Rewards'),
+    );
     await tester.tap(find.byKey(const Key('credit-card-tile.actions')));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
@@ -177,12 +183,6 @@ void main() {
           .controller!
           .text,
       'Travel Rewards',
-    );
-    expect(
-      tester
-          .getSemantics(find.byKey(const Key('credit-card-tile.actions')))
-          .label,
-      contains('Actions for Travel Rewards'),
     );
     semantics.dispose();
   });

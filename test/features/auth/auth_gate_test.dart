@@ -7,6 +7,7 @@ import 'package:creditbillsytems/features/auth/domain/user_model.dart';
 import 'package:creditbillsytems/features/auth/presentation/auth_gate.dart';
 import 'package:creditbillsytems/features/auth/presentation/auth_provider.dart';
 import 'package:creditbillsytems/features/auth/presentation/login_screen.dart';
+import 'package:creditbillsytems/features/auth/presentation/welcome_screen.dart';
 import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell_screen.dart';
 
 class StubAuthRepo implements AuthRepository {
@@ -54,7 +55,7 @@ void main() {
       );
     });
 
-    testWidgets('shows LoginScreen when unauthenticated', (tester) async {
+    testWidgets('shows WelcomeScreen when unauthenticated', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.lightTheme,
@@ -65,7 +66,8 @@ void main() {
         ),
       );
 
-      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
       expect(find.byType(DashboardShellScreen), findsNothing);
     });
 
@@ -84,9 +86,10 @@ void main() {
 
       expect(find.byType(DashboardShellScreen), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);
+      expect(find.byType(WelcomeScreen), findsNothing);
     });
 
-    testWidgets('dynamically transitions between Login and Dashboard on state change',
+    testWidgets('dynamically transitions between Welcome and Dashboard on state change',
         (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -99,7 +102,7 @@ void main() {
       );
 
       // Initially unauthenticated
-      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsOneWidget);
       expect(find.byType(DashboardShellScreen), findsNothing);
 
       // User authenticates
@@ -107,13 +110,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DashboardShellScreen), findsOneWidget);
-      expect(find.byType(LoginScreen), findsNothing);
+      expect(find.byType(WelcomeScreen), findsNothing);
 
       // User logs out
       authProvider.clearUser();
       await tester.pumpAndSettle();
 
-      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(find.byType(LoginScreen), findsNothing);
       expect(find.byType(DashboardShellScreen), findsNothing);
     });
   });

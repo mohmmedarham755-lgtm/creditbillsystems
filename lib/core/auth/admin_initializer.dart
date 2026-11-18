@@ -1,11 +1,11 @@
 import 'package:creditbillsytems/core/database/database_helper.dart';
+import 'package:creditbillsytems/core/auth/admin_account.dart';
 import 'package:creditbillsytems/core/security/password_hasher.dart';
 import 'package:creditbillsytems/core/utils/id_generator.dart';
 import 'package:creditbillsytems/core/auth/token_storage.dart';
 
 /// Ensures a default admin account exists. Called after DB init.
 Future<void> ensureAdminAccount(DatabaseHelper dbHelper, TokenStorage tokenStorage) async {
-  const adminEmail = 'admin@gmail.com';
   const adminPassword = '123456';
 
   final db = await dbHelper.database;
@@ -14,7 +14,7 @@ Future<void> ensureAdminAccount(DatabaseHelper dbHelper, TokenStorage tokenStora
   final existing = await db.query(
     'users',
     where: 'LOWER(email) = ?',
-    whereArgs: [adminEmail.toLowerCase()],
+    whereArgs: [defaultAdminEmail.toLowerCase()],
     limit: 1,
   );
 
@@ -28,7 +28,7 @@ Future<void> ensureAdminAccount(DatabaseHelper dbHelper, TokenStorage tokenStora
 
   await db.insert('users', {
     'id': id,
-    'email': adminEmail,
+    'email': defaultAdminEmail,
     'password_hash': hashed,
     'display_name': 'Admin',
     'created_at': now,

@@ -127,11 +127,19 @@ class _PaymentLoggerBottomSheetState
     final billProvider = context.watch<BillProvider>();
     final isSaving = billProvider.isSaving;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final bottomSafeArea = bottomInset == 0
+        ? MediaQuery.viewPaddingOf(context).bottom
+        : 0.0;
     final screenHeight = MediaQuery.sizeOf(context).height;
     final sheetMaxHeight = (screenHeight - bottomInset) * 0.60;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        24 + bottomInset + bottomSafeArea,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: sheetMaxHeight),
         child: SingleChildScrollView(

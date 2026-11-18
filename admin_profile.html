@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile – Credit Bill System</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                url('file:///C:/Users/ARHAM/.gemini/antigravity-cli/brain/28fa74ab-7d32-4f87-9f2c-2a5809a440af/resized_background.jpg')
+                no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+        }
+        header {
+            background: #004080;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo { max-height: 60px; margin-bottom: 0.5rem; }
+        header nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 1rem;
+        }
+        header nav a { color: #ffcc00; text-decoration: none; }
+        header nav a:hover { text-decoration: underline; }
+        header h1 { margin: 0; font-size: 2rem; }
+        main { padding: 1.5rem; max-width: 800px; margin: auto; }
+        .upload-section { text-align: center; margin-top: 2rem; }
+        .preview-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 300px;
+        }
+        .preview-img { width: 100%; height: auto; border-radius: 8px; }
+        .tick {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 40px;
+            height: 40px;
+        }
+        footer { background: #e0e0e0; text-align: center; padding: 1rem; font-size: .9rem; }
+        @media (max-width: 600px) {
+            header {padding: 1rem;}
+            header h1 {font-size: 1.5rem;}
+            main {padding: 1rem;}
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="file:///C:/Users/ARHAM/.gemini/antigravity-cli/brain/28fa74ab-7d32-4f87-9f2c-2a5809a440af/.user_uploaded/uploaded_media_1794908643166.jpg" alt="Logo" class="logo">
+        <h1>Admin Profile</h1>
+        <nav>
+            <ul>
+                <li><a href="welcome.html">Home</a></li>
+                <li><a href="#">Profile</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="big-image-section">
+            <img src="file:///C:/Users/ARHAM/.gemini/antigravity-cli/brain/28fa74ab-7d32-4f87-9f2c-2a5809a440af/.user_uploaded/uploaded_media_1794915511015.png" alt="Big Image" class="big-img">
+        </section>
+
+    </main>
+    <footer>
+        © 2026 Credit Bill System. All rights reserved.
+    </footer>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const previewWrapper = document.getElementById('previewWrapper');
+        const previewImg = document.getElementById('previewImg');
+        // Load stored image from localStorage if present
+        const storedImage = localStorage.getItem('adminProfileImage');
+        if (storedImage) {
+            previewImg.src = storedImage;
+            previewWrapper.style.display = 'inline-block';
+        }
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                previewImg.src = dataUrl;
+                previewWrapper.style.display = 'inline-block';
+                // Save image data URL to localStorage for persistence
+                try {
+                    localStorage.setItem('adminProfileImage', dataUrl);
+                } catch (err) {
+                    console.warn('LocalStorage quota exceeded or unavailable', err);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>

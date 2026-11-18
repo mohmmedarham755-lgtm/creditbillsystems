@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../dashboard/presentation/dashboard_shell_screen.dart';
 import 'auth_provider.dart';
-import 'login_screen.dart';
+import 'welcome_screen.dart';
 
 /// Root gate observing authentication state and displaying either
-/// [DashboardShellScreen] (authenticated) or [LoginScreen] (unauthenticated).
+/// [DashboardShellScreen] (authenticated) or [WelcomeScreen] (unauthenticated).
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -22,7 +22,6 @@ class AuthGate extends StatelessWidget {
       return const DashboardShellScreen();
     }
 
-    print('login screen');
-    return const LoginScreen();
+    return const WelcomeScreen();
   }
 }

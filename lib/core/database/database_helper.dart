@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 /// Database management helper for the local SQLite database.
 class DatabaseHelper {
   static const String _databaseName = 'credit_bill_system.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -42,6 +42,7 @@ class DatabaseHelper {
       version: _databaseVersion,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -118,6 +119,24 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_payments_bill_id ON payments (bill_id);');
     await db.execute('CREATE INDEX idx_payments_card_id ON payments (card_id);');
     await db.execute('CREATE INDEX idx_payments_payment_date ON payments (payment_date);');
+
+    await db.execute('''
+      CREATE TABLE app_settings (
+        setting_key TEXT PRIMARY KEY,
+        value BLOB NOT NULL
+      );
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE app_settings (
+          setting_key TEXT PRIMARY KEY,
+          value BLOB NOT NULL
+        );
+      ''');
+    }
   }
 
   /// Closes the database connection and resets cached instance.

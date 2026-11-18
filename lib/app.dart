@@ -5,6 +5,8 @@ import 'features/auth/presentation/auth_gate.dart';
 import 'features/auth/presentation/forgot_password_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
+import 'features/auth/presentation/welcome_screen.dart';
+import 'features/branding/presentation/admin_logo_screen.dart';
 import 'features/dashboard/presentation/dashboard_shell_screen.dart';
 
 /// Root MaterialApp widget configuring Material 3 theme and base route.
@@ -27,10 +29,12 @@ class CreditBillApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       home: home ?? const AuthGate(),
       routes: {
+        '/welcome': (_) => const WelcomeScreen(),
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/forgot-password': (_) => const ForgotPasswordScreen(),
         '/dashboard': (_) => const DashboardShellScreen(),
+        '/admin-logo': (_) => const AdminLogoScreen(),
       },
     );
   }

@@ -18,7 +18,7 @@ Rules:
 title: 'Story 2.4: Card Modification & Deletion with Safeguard Confirmation'
 type: 'feature'
 created: '2026-10-19'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'ee51fc453e6a8f322b86b64292cbca802e05ded7'

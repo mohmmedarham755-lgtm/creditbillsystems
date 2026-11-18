@@ -77,26 +77,41 @@ class _BillsTabScreenState extends State<BillsTabScreen> {
               segments: const [
                 ButtonSegment<BillStatus?>(
                   value: null,
-                  label: Text('All'),
-                  icon: Icon(Icons.list),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('All', maxLines: 1),
+                  ),
                 ),
                 ButtonSegment<BillStatus?>(
                   value: BillStatus.unpaid,
-                  label: Text('Pending'),
-                  icon: Icon(Icons.pending_actions),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Pending', maxLines: 1),
+                  ),
                 ),
                 ButtonSegment<BillStatus?>(
                   value: BillStatus.paid,
-                  label: Text('Paid'),
-                  icon: Icon(Icons.check_circle),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Paid', maxLines: 1),
+                  ),
                 ),
                 ButtonSegment<BillStatus?>(
                   value: BillStatus.overdue,
-                  label: Text('Overdue'),
-                  icon: Icon(Icons.warning),
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Overdue', maxLines: 1),
+                  ),
                 ),
               ],
               selected: {_selectedFilter},
+              showSelectedIcon: false,
+              style: ButtonStyle(
+                minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+                padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ),
               onSelectionChanged: (Set<BillStatus?> selection) {
                 setState(() {
                   _selectedFilter = selection.firstOrNull;

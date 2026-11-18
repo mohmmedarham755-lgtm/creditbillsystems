@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../dashboard/presentation/dashboard_shell_screen.dart';
+import '../../branding/presentation/app_brand_logo.dart';
 import 'auth_provider.dart';
 import 'login_screen.dart';
 
@@ -91,13 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // App Icon / Branding
-                  Icon(
-                    Icons.credit_card_rounded,
-                    size: 56,
-                    color: isDark
-                        ? AppColors.brandPrimaryDark
-                        : AppColors.brandPrimary,
-                  ),
+                  AppBrandLogo(size: 56),
                   const SizedBox(height: 12),
                   Text(
                     'Credit Bill System',

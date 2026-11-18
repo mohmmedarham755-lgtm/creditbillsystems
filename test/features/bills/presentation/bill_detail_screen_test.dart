@@ -318,6 +318,27 @@ void main() {
         expect(button.onPressed, isNotNull);
       });
 
+      testWidgets('keeps the button above the Android navigation inset', (tester) async {
+        tester.view.physicalSize = const Size(540, 1170);
+        tester.view.devicePixelRatio = 1.5;
+        tester.view.viewPadding = const FakeViewPadding(bottom: 24);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+          tester.view.resetViewPadding();
+        });
+
+        await tester.pumpWidget(_detailApp(bill: _testBillUnpaid));
+        await tester.ensureVisible(find.byKey(const Key('bill-detail.record-payment')));
+        await tester.pumpAndSettle();
+
+        final safeBottom =
+            tester.view.physicalSize.height / tester.view.devicePixelRatio -
+            tester.view.viewPadding.bottom;
+        expect(tester.getRect(find.byKey(const Key('bill-detail.record-payment'))).bottom,
+            lessThanOrEqualTo(safeBottom));
+      });
+
       testWidgets('enabled for partially paid bill', (tester) async {
         await tester.pumpWidget(_detailApp(bill: _testBillPartiallyPaid));
 

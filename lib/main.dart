@@ -19,6 +19,8 @@ import 'features/payments/data/sqlite_payment_repository.dart';
 import 'features/payments/domain/payment_repository.dart';
 import 'features/calendar/data/calendar_repository_impl.dart';
 import 'features/calendar/presentation/calendar_provider.dart';
+import 'features/branding/data/sqlite_branding_repository.dart';
+import 'features/branding/presentation/app_logo_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -28,6 +30,7 @@ Widget buildAppWithProviders({
   AuthProvider? authProvider,
   AuthRepository? authRepository,
   CardRepository? cardRepository,
+
   BillRepository? billRepository,
   PaymentRepository? paymentRepository,
   DatabaseHelper? dbHelper,
@@ -55,6 +58,11 @@ Widget buildAppWithProviders({
     providers: [
       ChangeNotifierProvider(
         create: (_) => authProvider ?? AuthProvider(authRepository: authRepo),
+      ),
+      ChangeNotifierProvider(
+        create: (_) => AppLogoProvider(
+          repository: SqliteBrandingRepository(databaseHelper: helper),
+        )..loadLogo(),
       ),
       ChangeNotifierProxyProvider<AuthProvider, CardProvider>(
         create: (_) => CardProvider(cardRepository: cardRepo),
@@ -133,11 +141,10 @@ Future<void> _initNotificationService() async {
 }
 
 /// Initialize database in background after app starts
-void _initializeDatabaseInBackground(DatabaseHelper dbHelper) async {
+Future<void> _initializeDatabaseInBackground(DatabaseHelper dbHelper) async {
   try {
-    // Wait for database to be initialized but don't block UI
     await dbHelper.database;
-    // Ensure admin account exists (once)
+
     final tokenStorage = TokenStorageImpl();
     await ensureAdminAccount(dbHelper, tokenStorage);
   } catch (_) {
@@ -147,12 +154,11 @@ void _initializeDatabaseInBackground(DatabaseHelper dbHelper) async {
 
 /// Build app that starts with loading while database initializes in background
 Widget _buildAppWithDatabaseInit(DatabaseHelper dbHelper) {
-  // Wait for database initialization but allow widget tree to start
-  // We use a future that completes after the first frame
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    // Database init happens in background - don't block UI
     _initializeDatabaseLater(dbHelper);
   });
+
+  // Keep the remaining existing function body here.
 
   // Return initial loading/app shell
   return MaterialApp(

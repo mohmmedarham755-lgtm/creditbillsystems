@@ -243,6 +243,36 @@ void main() {
       expect(find.text('Cancel'), findsOneWidget);
     });
 
+    testWidgets('keeps payment actions above the Android navigation bar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(540, 1170);
+      tester.view.devicePixelRatio = 1.5;
+      tester.view.viewPadding = const FakeViewPadding(bottom: 48);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewPadding();
+      });
+
+      await openSheet(tester);
+      final cancelButton = find.byKey(const Key('payment-logger.cancel'));
+      final confirmButton = find.byKey(
+        const Key('payment-logger.confirm-payment'),
+      );
+      await tester.ensureVisible(confirmButton);
+      await tester.pumpAndSettle();
+
+      final safeBottom =
+          tester.view.physicalSize.height / tester.view.devicePixelRatio -
+          tester.view.viewPadding.bottom;
+      expect(tester.getRect(cancelButton).bottom, lessThanOrEqualTo(safeBottom));
+      expect(
+        tester.getRect(confirmButton).bottom,
+        lessThanOrEqualTo(safeBottom),
+      );
+    });
+
     testWidgets('Pay Full fills the exact remaining balance', (tester) async {
       await openSheet(tester);
       await tester.tap(find.text('Pay Full'));

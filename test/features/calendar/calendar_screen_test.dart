@@ -60,6 +60,7 @@ class _FakeCalendarRepository implements CalendarRepository {
 Widget createCalendarWidget({
   AuthProvider? authProvider,
   CalendarProvider? calendarProvider,
+  bool withDashboardChrome = false,
 }) {
   return MaterialApp(
     home: MultiProvider(
@@ -67,7 +68,30 @@ Widget createCalendarWidget({
         ChangeNotifierProvider<AuthProvider?>.value(value: authProvider),
         ChangeNotifierProvider<CalendarProvider?>.value(value: calendarProvider),
       ],
-      child: const CalendarScreen(),
+      child: withDashboardChrome
+          ? Scaffold(
+              appBar: AppBar(title: const Text('Credit Bill System')),
+              body: const CalendarScreen(),
+              bottomNavigationBar: NavigationBar(
+                selectedIndex: 2,
+                onDestinationSelected: (_) {},
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.dashboard_outlined),
+                    label: 'Dashboard',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.receipt_long_outlined),
+                    label: 'Bills',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.calendar_month_outlined),
+                    label: 'Calendar',
+                  ),
+                ],
+              ),
+            )
+          : const CalendarScreen(),
     ),
   );
 }
@@ -153,6 +177,48 @@ void main() {
       expect(find.text('Calendar'), findsOneWidget);
       expect(find.text('Select a date'), findsOneWidget);
       expect(find.text('Tap a day with a dot to see bills due that day.'), findsOneWidget);
+    });
+
+    testWidgets('does not overflow in compact dashboard calendar view', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(540, 1170);
+      tester.view.devicePixelRatio = 1.5;
+      tester.view.viewPadding = const FakeViewPadding(top: 24, bottom: 24);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        tester.view.resetViewPadding();
+      });
+
+      final authProvider = AuthProvider(
+        authRepository: _FakeAuthRepository(),
+        listenToAuthChanges: false,
+      )..setUser(uid: 'user-1', email: 'test@example.com');
+      final calendarProvider = CalendarProvider(
+        repository: fakeRepo,
+        authProvider: authProvider,
+      );
+      addTearDown(authProvider.dispose);
+      addTearDown(calendarProvider.dispose);
+
+      await tester.pumpWidget(
+        createCalendarWidget(
+          authProvider: authProvider,
+          calendarProvider: calendarProvider,
+          withDashboardChrome: true,
+        ),
+      );
+      fakeRepo.controllerFor('user-1').add([]);
+      await tester.pump();
+
+      expect(find.text('Select a date'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      calendarProvider.selectDay(DateTime(2026, 11, 13));
+      await tester.pump();
+      expect(find.text('No bills due'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('displays bill card when selecting a day with bills', (tester) async {

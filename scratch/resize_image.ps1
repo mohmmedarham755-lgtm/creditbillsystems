@@ -1,0 +1,13 @@
+Add-Type -AssemblyName System.Drawing;
+$srcPath = 'C:/Users/ARHAM/.gemini/antigravity-cli/brain/28fa74ab-7d32-4f87-9f2c-2a5809a440af/.user_uploaded/uploaded_media_1794908643166.jpg';
+$dstPath = 'C:/Users/ARHAM/.gemini/antigravity-cli/brain/28fa74ab-7d32-4f87-9f2c-2a5809a440af/resized_background.jpg';
+$src = [System.Drawing.Image]::FromFile($srcPath);
+$newWidth = 800;
+$ratio = $newWidth / $src.Width;
+$newHeight = [int]($src.Height * $ratio);
+$thumb = New-Object System.Drawing.Bitmap $newWidth, $newHeight;
+$g = [System.Drawing.Graphics]::FromImage($thumb);
+$g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic;
+$g.DrawImage($src, 0,0,$newWidth,$newHeight);
+$thumb.Save($dstPath, [System.Drawing.Imaging.ImageFormat]::Jpeg);
+$src.Dispose(); $thumb.Dispose(); $g.Dispose();

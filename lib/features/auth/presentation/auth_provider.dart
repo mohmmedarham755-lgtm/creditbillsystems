@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/auth/admin_account.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../domain/auth_repository.dart';
 import '../domain/user_model.dart';
@@ -52,6 +53,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated => _userId != null;
+  bool get isAdmin =>
+      _userEmail?.trim().toLowerCase() == defaultAdminEmail.toLowerCase();
   String? get userId => _userId;
   String? get userEmail => _userEmail;
   String? get errorMessage => _errorMessage;

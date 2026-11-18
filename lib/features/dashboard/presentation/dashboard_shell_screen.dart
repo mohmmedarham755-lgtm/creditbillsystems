@@ -82,6 +82,17 @@ class _DashboardShellScreenState extends State<DashboardShellScreen> {
                   ],
                 ),
                 const Divider(height: 32),
+                if (authProvider.isAdmin)
+                  ListTile(
+                    leading: const Icon(Icons.image_outlined),
+                    title: const Text('App Logo'),
+                    subtitle: const Text('Set or change the app logo'),
+                    contentPadding: EdgeInsets.zero,
+                    onTap: () {
+                      Navigator.of(bottomSheetContext).pop();
+                      Navigator.of(context).pushNamed('/admin-logo');
+                    },
+                  ),
                 ListTile(
                   leading: const Icon(
                     Icons.logout,

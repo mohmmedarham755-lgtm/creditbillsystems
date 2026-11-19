@@ -1,0 +1,52 @@
+name: Flutter Analyze
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.dart'
+
+jobs:
+  analyze:
+    runs-on: windows-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: 📦 Get dependencies
+        run: flutter pub get
+
+      - name: 🔍 Run flutter analyze
+        run: flutter analyze
+
+      - name: 📝 Post analysis results as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const analysisOutput = `## 📊 Flutter Analysis Results
+
+            \`\`\`text
+            [ANALYSIS OUTPUT WOULD APPEAR HERE]
+            \`\`\`
+
+            **Overall Status**: \${{ job.status }}
+
+            _Run on: \${{ github.run_number }} — \${{ github.head_ref || github.ref_name }}_
+            `
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: analysisOutput
+            })

@@ -1,122 +1,140 @@
+
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'welcome_screen.dart';
+import 'core/auth/admin_initializer.dart';
+import 'package:provider/provider.dart';
+import 'app.dart';
+import 'core/auth/token_storage_impl.dart';
+import 'core/database/database_helper.dart';
+import 'core/services/notification_service.dart';
+import 'features/auth/data/sqlite_auth_repository.dart';
+import 'features/auth/domain/auth_repository.dart';
+import 'features/auth/presentation/auth_provider.dart';
+import 'features/bills/data/sqlite_bill_repository.dart';
+import 'features/bills/domain/bill_repository.dart';
+import 'features/bills/presentation/bill_provider.dart';
+import 'features/cards/data/sqlite_card_repository.dart';
+import 'features/cards/domain/card_repository.dart';
+import 'features/cards/presentation/card_provider.dart';
+import 'features/payments/data/sqlite_payment_repository.dart';
+import 'features/payments/domain/payment_repository.dart';
+import 'features/calendar/data/calendar_repository_impl.dart';
+import 'features/calendar/presentation/calendar_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+Widget buildAppWithProviders({
+  Widget child = const CreditBillApp(),
+  AuthProvider? authProvider,
+  AuthRepository? authRepository,
+  CardRepository? cardRepository,
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  BillRepository? billRepository,
+  PaymentRepository? paymentRepository,
+  DatabaseHelper? dbHelper,
+}) {
+  final helper = dbHelper ?? DatabaseHelper();
+  final tokenStorage = TokenStorageImpl();
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+  final authRepo =
+      authRepository ??
+      SqliteAuthRepository(dbHelper: helper, tokenStorage: tokenStorage);
+  final cardRepo = cardRepository ?? SqliteCardRepository(dbHelper: helper);
+  final billRepo = billRepository ?? SqliteBillRepository(dbHelper: helper);
+  final paymentRepo =
+      paymentRepository ??
+      SqlitePaymentRepository(
+        dbHelper: helper,
+        onDataMutated: (userId) {
+          if (billRepo is SqliteBillRepository) {
+            billRepo.notifyWatchers(userId);
+          }
+        },
+      );
+
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+        create: (_) => authProvider ?? AuthProvider(authRepository: authRepo),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      ChangeNotifierProxyProvider<AuthProvider, CardProvider>(
+        create: (_) => CardProvider(cardRepository: cardRepo),
+        update: (_, auth, cards) {
+          final cardProvider = cards ?? CardProvider(cardRepository: cardRepo);
+          cardProvider.bindAuthProvider(auth);
+          return cardProvider;
+        },
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      ChangeNotifierProxyProvider<AuthProvider, BillProvider>(
+        create: (_) => BillProvider(
+          billRepository: billRepo,
+          paymentRepository: paymentRepo,
         ),
+        update: (_, auth, bills) {
+          final billProvider =
+              bills ??
+              BillProvider(
+                billRepository: billRepo,
+                paymentRepository: paymentRepo,
+              );
+          billProvider.bindAuthProvider(auth);
+          return billProvider;
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      ChangeNotifierProxyProvider<AuthProvider, CalendarProvider>(
+        create: (_) => CalendarProvider(
+          repository: CalendarRepositoryImpl(billRepository: billRepo),
+        ),
+        update: (_, auth, calendar) {
+          final provider =
+              calendar ??
+              CalendarProvider(
+                repository: CalendarRepositoryImpl(billRepository: billRepo),
+              );
+          provider.bindAuthProvider(auth);
+          return provider;
+        },
       ),
-    );
+    ],
+    child: child,
+  );
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SQLite factory for Flutter Web
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  }
+
+  // Initialize notification service
+  await _initNotificationService();
+
+  // Initialize database before starting the app
+  final dbHelper = DatabaseHelper();
+
+  await dbHelper.database;
+
+  // Initialize admin account
+  final tokenStorage = TokenStorageImpl();
+  await ensureAdminAccount(dbHelper, tokenStorage);
+
+  // Start application
+  runApp(buildAppWithProviders(
+    dbHelper: dbHelper,
+    child: const CreditBillApp(home: WelcomeScreen()),
+  ));
+}
+
+/// Initialize notification service best-effort, don't block app startup
+Future<void> _initNotificationService() async {
+  try {
+    await NotificationService().initialize();
+  } catch (_) {
+    // Best-effort initialization in environments without notification service
   }
 }
+

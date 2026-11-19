@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 /// Semantic color palette defined in DESIGN.md for the Credit Bill System.
@@ -35,4 +36,4 @@ class AppColors {
   static const Color healthHealthyDark = Color(0xFF34D399);
   static const Color healthModerateDark = Color(0xFFFBBF24);
   static const Color healthRiskDark = Color(0xFFF87171);
-}
+}

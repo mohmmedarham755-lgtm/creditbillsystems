@@ -1,5 +1,6 @@
 import 'package:creditbillsytems/core/utils/credit_calculator.dart';
 import 'package:creditbillsytems/features/dashboard/presentation/utilization_gauge_widget.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

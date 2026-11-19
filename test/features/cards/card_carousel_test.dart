@@ -10,6 +10,7 @@ import 'package:creditbillsytems/features/cards/domain/card_repository.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_carousel.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_provider.dart';
 import 'package:creditbillsytems/features/cards/presentation/credit_card_tile.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';

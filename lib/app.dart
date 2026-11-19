@@ -1,3 +1,4 @@
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
@@ -20,6 +21,7 @@ class CreditBillApp extends StatelessWidget {
       title: 'Credit Bill System',
       debugShowCheckedModeBanner: false,
       locale: locale,
+      // ignore: deprecated_member_use
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('en'), Locale('de')],
       theme: AppTheme.lightTheme,

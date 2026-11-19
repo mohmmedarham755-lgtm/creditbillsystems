@@ -1,8 +1,10 @@
+
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'welcome_screen.dart';
 import 'core/auth/admin_initializer.dart';
 import 'package:provider/provider.dart';
 import 'app.dart';
-import 'core/theme/app_theme.dart';
 import 'core/auth/token_storage_impl.dart';
 import 'core/database/database_helper.dart';
 import 'core/services/notification_service.dart';
@@ -121,7 +123,10 @@ Future<void> main() async {
   await ensureAdminAccount(dbHelper, tokenStorage);
 
   // Start application
-  runApp(buildAppWithProviders(dbHelper: dbHelper));
+  runApp(buildAppWithProviders(
+    dbHelper: dbHelper,
+    child: const CreditBillApp(home: WelcomeScreen()),
+  ));
 }
 
 /// Initialize notification service best-effort, don't block app startup
@@ -133,84 +138,3 @@ Future<void> _initNotificationService() async {
   }
 }
 
-/// Initialize database in background after app starts
-void  (DatabaseHelper dbHelper) async {
-    try {
-    // Wait for database to be initialized but don't block UI
-    await dbHelper.database;
-    // Ensure admin account exists (once)
-    final tokenStorage = TokenStorageImpl();
-    await ensureAdminAccount(dbHelper, tokenStorage);
-  } catch (_) {
-    // Database initialization failure won't crash the app
-  }
-}
-
-/// Build app that starts with loading while database initializes in background
-Widget _buildAppWithDatabaseInit(DatabaseHelper dbHelper) {
-  // Wait for database initialization but allow widget tree to start
-  // We use a future that completes after the first frame
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    // Database init happens in background - don't block UI
-    _initializeDatabaseLater(dbHelper);
-  });
-
-  // Return initial loading/app shell
-  return MaterialApp(
-    title: 'Credit Bill System',
-    debugShowCheckedModeBanner: false,
-    theme: AppTheme.lightTheme,
-    darkTheme: AppTheme.darkTheme,
-    themeMode: ThemeMode.system,
-    home: const _DatabaseInitScreen(),
-  );
-}
-
-/// Initialize database after first frame - non-blocking
-void _initializeDatabaseLater(DatabaseHelper dbHelper) async {
-  try {
-    await dbHelper.database;
-  } catch (_) {
-    // Database initialization failure won't crash the app
-  }
-}
-
-/// Screen shown while database initializes in background
-class _DatabaseInitScreen extends StatefulWidget {
-  const _DatabaseInitScreen();
-
-  @override
-  State<_DatabaseInitScreen> createState() => _DatabaseInitScreenState();
-}
-
-class _DatabaseInitScreenState extends State<_DatabaseInitScreen> {
-  bool _isDatabaseReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Mark ready immediately; database initializes in background
-    setState(() => _isDatabaseReady = true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isDatabaseReady) {
-      // Database is initialized, show the main app with providers
-      return buildAppWithProviders();
-    }
-
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 20),
-            const Text('Loading Credit Bill System...'),
-          ],
-        ),
-      ),
-    );
-  }
-}

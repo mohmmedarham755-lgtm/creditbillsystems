@@ -56,6 +56,33 @@ class DatabaseHelper {
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         display_name TEXT,
+        created_at TEXT NOT NULL,
+        avatar_path TEXT
+      );
+    ''');
+    await db.execute('CREATE INDEX idx_users_email ON users (email);');
+    // Existing tables unchanged
+    await db.execute('''
+      CREATE TABLE cards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        card_name TEXT NOT NULL,
+        bank_name TEXT NOT NULL,
+        last4_digits TEXT NOT NULL,
+        credit_limit REAL NOT NULL,
+        billing_cycle_day INTEGER NOT NULL,
+        grace_period_days INTEGER NOT NULL DEFAULT 21,
+        current_balance REAL NOT NULL DEFAULT 0.0,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      );
+    ''');
+    await db.execute('''
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        display_name TEXT,
         created_at TEXT NOT NULL
       );
     ''');

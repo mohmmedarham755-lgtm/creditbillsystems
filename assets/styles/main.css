@@ -1,0 +1,48 @@
+/* Main stylesheet for creditbillsytems project */
+
+/* Global page layout */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: url('../images/welcome.jpg') no-repeat center top;
+  background-size: cover;
+  color: #333;
+}
+
+/* Header with welcome banner */
+header {
+  height: 200px;
+  background: url('../images/welcome.jpg') no-repeat center;
+  background-size: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+header h1 {
+  color: #fff;
+  font-size: 2.5rem;
+  text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* Icon utilities – use as <i class="icon home"></i> */
+.icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.icon.home   { background-image: url('../icons/home.svg'); }
+.icon.settings { background-image: url('../icons/settings.svg'); }
+.icon.user   { background-image: url('../icons/user.svg'); }
+
+/* Simple container for content */
+.container {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background: rgba(255,255,255,0.9);
+  border-radius: 8px;
+}

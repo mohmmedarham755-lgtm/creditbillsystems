@@ -132,7 +132,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'name@example.com'),
+        find.widgetWithText(TextFormField, 'admin@gmail.com'),
         'not-a-valid-email',
       );
       await tester.enterText(
@@ -158,7 +158,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'name@example.com'),
+        find.widgetWithText(TextFormField, 'admin@gmail.com'),
         'valid@example.com',
       );
       await tester.enterText(
@@ -191,7 +191,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'name@example.com'),
+        find.widgetWithText(TextFormField, 'admin@gmail.com'),
         'user@example.com',
       );
       await tester.enterText(
@@ -223,7 +223,7 @@ void main() {
         );
 
         await tester.enterText(
-          find.widgetWithText(TextFormField, 'name@example.com'),
+          find.widgetWithText(TextFormField, 'admin@gmail.com'),
           'valid@example.com',
         );
         await tester.enterText(

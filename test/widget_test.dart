@@ -53,15 +53,15 @@ class FakeTokenStorage implements TokenStorage {
 }
 
 void main() {
-  setUpAll(() {
+  late Database db;
+
+  setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-  });
-
-  testWidgets('CreditBillApp bootstrap and navigation smoke test', (
-    WidgetTester tester,
-  ) async {
-    final db = await databaseFactoryFfi.openDatabase(
+    // Open the FFI database outside the widget-test async zone. Opening it
+    // inside testWidgets keeps pumpWidget waiting forever for the native
+    // isolate to settle.
+    db = await databaseFactoryFfi.openDatabase(
       inMemoryDatabasePath,
       options: OpenDatabaseOptions(
         version: 1,
@@ -121,7 +121,15 @@ void main() {
         },
       ),
     );
+  });
 
+  tearDownAll(() async {
+    await db.close();
+  });
+
+  testWidgets('CreditBillApp bootstrap and navigation smoke test', (
+    WidgetTester tester,
+  ) async {
     final helper = DatabaseHelper.withDatabase(db);
     final tokenStorage = FakeTokenStorage();
 
@@ -185,7 +193,5 @@ void main() {
 
     // Verify Calendar tab is displayed
     expect(find.text('Calendar'), findsWidgets);
-
-    await db.close();
   });
 }

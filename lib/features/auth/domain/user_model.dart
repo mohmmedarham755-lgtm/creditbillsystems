@@ -4,11 +4,6 @@ class UserModel {
   final String email;
   final DateTime createdAt;
   final String? displayName;
-  final String? avatarPath;
-  final String uid;
-  final String email;
-  final DateTime createdAt;
-  final String? displayName;
 
   const UserModel({
     required this.uid,

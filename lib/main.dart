@@ -1,10 +1,11 @@
-
+import 'package:flutter/foundation.dart';
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart';
-import 'core/auth/admin_initializer.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'app.dart';
+import 'core/auth/admin_initializer.dart';
 import 'core/auth/token_storage_impl.dart';
 import 'core/database/database_helper.dart';
 import 'core/services/notification_service.dart';
@@ -14,16 +15,16 @@ import 'features/auth/presentation/auth_provider.dart';
 import 'features/bills/data/sqlite_bill_repository.dart';
 import 'features/bills/domain/bill_repository.dart';
 import 'features/bills/presentation/bill_provider.dart';
+import 'features/calendar/data/calendar_repository_impl.dart';
+import 'features/calendar/presentation/calendar_provider.dart';
 import 'features/cards/data/sqlite_card_repository.dart';
 import 'features/cards/domain/card_repository.dart';
 import 'features/cards/presentation/card_provider.dart';
 import 'features/payments/data/sqlite_payment_repository.dart';
 import 'features/payments/domain/payment_repository.dart';
-import 'features/calendar/data/calendar_repository_impl.dart';
-import 'features/calendar/presentation/calendar_provider.dart';
-import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'features/settings/data/sqlite_settings_repository.dart';
+import 'features/settings/domain/settings_repository.dart';
+import 'welcome_screen.dart';
 
 Widget buildAppWithProviders({
   Widget child = const CreditBillApp(),
@@ -33,6 +34,7 @@ Widget buildAppWithProviders({
 
   BillRepository? billRepository,
   PaymentRepository? paymentRepository,
+  SettingsRepository? settingsRepository,
   DatabaseHelper? dbHelper,
 }) {
   final helper = dbHelper ?? DatabaseHelper();
@@ -53,9 +55,12 @@ Widget buildAppWithProviders({
           }
         },
       );
+  final settingsRepo =
+      settingsRepository ?? SqliteSettingsRepository(dbHelper: helper);
 
   return MultiProvider(
     providers: [
+      Provider<SettingsRepository>.value(value: settingsRepo),
       ChangeNotifierProvider(
         create: (_) => authProvider ?? AuthProvider(authRepository: authRepo),
       ),
@@ -123,10 +128,12 @@ Future<void> main() async {
   await ensureAdminAccount(dbHelper, tokenStorage);
 
   // Start application
-  runApp(buildAppWithProviders(
-    dbHelper: dbHelper,
-    child: const CreditBillApp(home: WelcomeScreen()),
-  ));
+  runApp(
+    buildAppWithProviders(
+      dbHelper: dbHelper,
+      child: const CreditBillApp(home: WelcomeScreen()),
+    ),
+  );
 }
 
 /// Initialize notification service best-effort, don't block app startup
@@ -137,4 +144,3 @@ Future<void> _initNotificationService() async {
     // Best-effort initialization in environments without notification service
   }
 }
-

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:creditbillsytems/core/database/database_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -179,6 +182,116 @@ void main() {
         expect((await activeDb.query('cards')).length, equals(0));
         expect((await activeDb.query('bills')).length, equals(0));
         expect((await activeDb.query('payments')).length, equals(0));
+      },
+    );
+  });
+
+  group('DatabaseHelper v1 to v2 upgrade', () {
+    late String dbPath;
+
+    setUp(() async {
+      final databasesPath = await databaseFactory.getDatabasesPath();
+      Directory(databasesPath).createSync(recursive: true);
+      dbPath = p.join(databasesPath, 'credit_bill_system.db');
+      final staleFile = File(dbPath);
+      if (staleFile.existsSync()) staleFile.deleteSync();
+
+      final v1Database = await databaseFactory.openDatabase(
+        dbPath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onConfigure: (db) async {
+            await db.execute('PRAGMA foreign_keys = ON;');
+          },
+          onCreate: (db, _) async {
+            await db.execute('''
+              CREATE TABLE users (
+                id TEXT PRIMARY KEY,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                display_name TEXT,
+                created_at TEXT NOT NULL
+              );
+            ''');
+          },
+        ),
+      );
+      await v1Database.insert('users', {
+        'id': 'existing-user',
+        'email': 'existing@example.com',
+        'password_hash': 'hashed_secret',
+        'display_name': 'Existing User',
+        'created_at': '2026-01-01T00:00:00.000Z',
+      });
+      await v1Database.close();
+      DatabaseHelper.resetInstance();
+    });
+
+    tearDown(() async {
+      await DatabaseHelper().close();
+      DatabaseHelper.resetInstance();
+      final dbFile = File(dbPath);
+      if (dbFile.existsSync()) dbFile.deleteSync();
+    });
+
+    test('upgrades an existing v1 database without losing rows', () async {
+      final helper = DatabaseHelper();
+      final db = await helper.database;
+
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table';",
+      );
+      expect(tables.map((row) => row['name']), contains('app_settings'));
+
+      final users = await db.query('users');
+      expect(users.length, 1);
+      expect(users.first['email'], 'existing@example.com');
+      expect(await helper.getAppSetting('logo_path'), isNull);
+    });
+  });
+
+  group('DatabaseHelper legacy app_settings schema migration', () {
+    test(
+      'migrates existing version 2 app_settings(setting_key,value BLOB) to key/value TEXT',
+      () async {
+        final db = await databaseFactoryFfi.openDatabase(
+          inMemoryDatabasePath,
+          options: OpenDatabaseOptions(
+            version: 2,
+            onCreate: (db, version) async {
+              await db.execute('''
+                CREATE TABLE app_settings (
+                  setting_key TEXT PRIMARY KEY,
+                  value BLOB NOT NULL
+                );
+              ''');
+              await db.insert('app_settings', {
+                'setting_key': 'logo_path',
+                'value': '/tmp/logo.png',
+              });
+            },
+          ),
+        );
+        addTearDown(() async => db.close());
+
+        final helper = DatabaseHelper.withDatabase(db);
+
+        expect(await helper.getAppSetting('logo_path'), '/tmp/logo.png');
+
+        await helper.saveAppSetting('theme', 'dark');
+        expect(await helper.getAppSetting('theme'), 'dark');
+
+        final columns = await db.rawQuery('PRAGMA table_info(app_settings);');
+        final names = columns.map((c) => c['name']).toSet();
+        expect(names, containsAll(<String>{'key', 'value'}));
+        expect(names, isNot(contains('setting_key')));
+
+        final rows = await db.query(
+          'app_settings',
+          where: 'key = ?',
+          whereArgs: ['logo_path'],
+        );
+        expect(rows.single['value'], '/tmp/logo.png');
       },
     );
   });

@@ -134,7 +134,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'admin@gmail.com'),
+        find.byKey(const Key('email_field')),
         'invalid-email-string',
       );
       await tester.enterText(
@@ -164,7 +164,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'admin@gmail.com'),
+        find.byKey(const Key('email_field')),
         'valid@example.com',
       );
       await tester.enterText(
@@ -194,7 +194,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'admin@gmail.com'),
+        find.byKey(const Key('email_field')),
         'valid@example.com',
       );
       await tester.enterText(
@@ -226,7 +226,7 @@ void main() {
       await tester.pumpWidget(createTestableWidget(authProvider: authProvider));
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'admin@gmail.com'),
+        find.byKey(const Key('email_field')),
         'taken@example.com',
       );
       await tester.enterText(
@@ -260,7 +260,7 @@ void main() {
         'Daniel',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'admin@gmail.com'),
+        find.byKey(const Key('email_field')),
         'daniel@example.com',
       );
       await tester.enterText(

@@ -15,9 +15,13 @@ import '../../bills/presentation/bill_provider.dart';
 import '../../calendar/presentation/calendar_screen.dart';
 import '../../cards/presentation/card_carousel.dart';
 import '../../cards/presentation/card_provider.dart';
+import 'dart:io';
+
+import '../../settings/domain/settings_repository.dart';
+import '../../settings/presentation/settings_screen.dart';
 import 'utilization_gauge_widget.dart';
 
-/// Main navigation shell housing the 3-tab Material 3 NavigationBar.
+/// Main navigation shell housing the Material 3 NavigationBar.
 class DashboardShellScreen extends StatefulWidget {
   const DashboardShellScreen({super.key});
 
@@ -27,112 +31,75 @@ class DashboardShellScreen extends StatefulWidget {
 
 class _DashboardShellScreenState extends State<DashboardShellScreen> {
   int _currentIndex = 0;
+  String? _adminLogoPath;
+  bool _logoLoadAttempted = false;
 
-  void _showAccountMenu(BuildContext context) {
-    final authProvider = context.read<AuthProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = context.watch<AuthProvider>();
+    if (!authProvider.isAuthenticated) {
+      _logoLoadAttempted = false;
+      return;
+    }
+    if (!_logoLoadAttempted) {
+      _logoLoadAttempted = true;
+      _loadAdminLogo();
+    }
+  }
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (bottomSheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 20.0,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundColor: AppColors.brandPrimaryLight,
-                      child: Icon(Icons.person, color: AppColors.brandPrimary),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            authProvider.currentUser?.displayName ?? 'Account',
-                            style: Theme.of(bottomSheetContext)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            authProvider.userEmail ?? 'Logged In User',
-                            style: Theme.of(bottomSheetContext)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondary,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 32),
-                ListTile(
-                  leading: const Icon(
-                    Icons.logout,
-                    color: AppColors.healthRisk,
-                  ),
-                  title: const Text(
-                    'Log Out',
-                    style: TextStyle(
-                      color: AppColors.healthRisk,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                  onTap: () async {
-                    Navigator.of(bottomSheetContext).pop();
-                    await authProvider.logout();
-                    if (!context.mounted) return;
-                    if (authProvider.errorMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(authProvider.errorMessage!),
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.of(
-                      context,
-                    ).pushNamedAndRemoveUntil('/login', (route) => false);
-                  },
-                ),
-              ],
-            ),
+  Future<void> _loadAdminLogo() async {
+    try {
+      final repo = context.read<SettingsRepository?>();
+      if (repo == null) return;
+      final settings = await repo.getSettings();
+      if (!mounted) return;
+      setState(() {
+        _adminLogoPath = settings.logoPath;
+      });
+    } catch (_) {
+      // Best-effort; keep default icon.
+    }
+  }
+
+  Widget _buildBrandLogo(BuildContext context) {
+    final path = _adminLogoPath;
+    if (path != null && path.isNotEmpty) {
+      final file = File(path);
+      if (file.existsSync()) {
+        return ClipRRect(
+          key: const Key('dashboard-brand-logo'),
+          borderRadius: BorderRadius.circular(6),
+          child: Image.file(
+            file,
+            width: 28,
+            height: 28,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const _BrandLogoFallback(),
           ),
         );
-      },
-    );
+      }
+    }
+    return const _BrandLogoFallback();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Credit Bill System'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () => _showAccountMenu(context),
-          ),
-        ],
+        title: Row(
+          children: [
+            _buildBrandLogo(context),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Credit Bill System',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
       body: IndexedStack(
         index: _currentIndex,
@@ -140,6 +107,11 @@ class _DashboardShellScreenState extends State<DashboardShellScreen> {
           const _DashboardTab(),
           const BillsTabScreen(),
           const CalendarScreen(),
+          SettingsScreen(
+            onLogoChanged: () {
+              if (mounted) _loadAdminLogo();
+            },
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -148,22 +120,28 @@ class _DashboardShellScreenState extends State<DashboardShellScreen> {
           setState(() {
             _currentIndex = index;
           });
+          if (index == 3) _loadAdminLogo();
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Bills',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
             label: 'Calendar',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),
@@ -193,10 +171,9 @@ class _DashboardTab extends StatelessWidget {
           children: [
             Text(
               'Dashboard',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             if (cardProvider != null &&
@@ -235,20 +212,18 @@ class _DashboardTab extends StatelessWidget {
             ],
             Text(
               'Your cards',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
             const CardCarousel(),
             const SizedBox(height: 24),
             Text(
               'Upcoming Bills',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             if (billProvider == null)
@@ -299,9 +274,9 @@ class _MetricCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -315,11 +290,11 @@ class _BillProviderUnavailableState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('Bill storage is unavailable.'),
-        ),
-      );
+    child: Padding(
+      padding: EdgeInsets.all(24),
+      child: Text('Bill storage is unavailable.'),
+    ),
+  );
 }
 
 /// Shows when no user is authenticated.
@@ -328,11 +303,11 @@ class _UnauthenticatedBillsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('Sign in to view your bills.'),
-        ),
-      );
+    child: Padding(
+      padding: EdgeInsets.all(24),
+      child: Text('Sign in to view your bills.'),
+    ),
+  );
 }
 
 /// Shows while bills are loading.
@@ -341,11 +316,11 @@ class _BillsLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(),
-        ),
-      );
+    child: Padding(
+      padding: EdgeInsets.all(24),
+      child: CircularProgressIndicator(),
+    ),
+  );
 }
 
 /// Shows when bill loading fails, with a retry action.
@@ -357,31 +332,31 @@ class _BillsErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.cloud_off_outlined,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.cloud_off_outlined,
+            color: Theme.of(context).colorScheme.error,
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Displays the top upcoming bills sorted by due date (closest first).
@@ -398,9 +373,7 @@ class _UpcomingBillsList extends StatelessWidget {
 
     if (topThree.isEmpty) {
       // Fixed: use a simple Center widget with the expected text.
-      return const Center(
-        child: Text('No upcoming bills.'),
-      );
+      return const Center(child: Text('No upcoming bills.'));
     }
 
     return Column(
@@ -413,6 +386,20 @@ class _UpcomingBillsList extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BrandLogoFallback extends StatelessWidget {
+  const _BrandLogoFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      key: Key('dashboard-brand-logo-fallback'),
+      width: 28,
+      height: 28,
+      child: Icon(Icons.credit_card, size: 22),
     );
   }
 }
@@ -434,9 +421,9 @@ class _UpcomingBillTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Text(
           'Card ${bill.cardId}',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,12 +437,10 @@ class _UpcomingBillTile extends StatelessWidget {
             Text(
               'Status: ${_statusDisplayName(bill.status)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isOverdue
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                    fontWeight: isOverdue ? FontWeight.w600 : null,
-                  ),
-          ),
+                color: isOverdue ? Theme.of(context).colorScheme.error : null,
+                fontWeight: isOverdue ? FontWeight.w600 : null,
+              ),
+            ),
           ],
         ),
         trailing: Column(
@@ -465,28 +450,24 @@ class _UpcomingBillTile extends StatelessWidget {
             Text(
               CurrencyFormatter.format(bill.remainingBalance),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isOverdue
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: isOverdue ? Theme.of(context).colorScheme.error : null,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               'Minimum: ${CurrencyFormatter.format(bill.minimumDue)}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondary,
-                  ),
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondary,
+              ),
             ),
-            ],
-          ),
+          ],
+        ),
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => BillDetailScreen(bill: bill),
-            ),
+            MaterialPageRoute(builder: (_) => BillDetailScreen(bill: bill)),
           );
         },
       ),
@@ -498,5 +479,3 @@ class _UpcomingBillTile extends StatelessWidget {
     return name[0].toUpperCase() + name.substring(1);
   }
 }
-
-

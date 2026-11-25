@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 /// Database management helper for the local SQLite database.
 class DatabaseHelper {
   static const String _databaseName = 'credit_bill_system.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -42,6 +42,7 @@ class DatabaseHelper {
       version: _databaseVersion,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -50,6 +51,16 @@ class DatabaseHelper {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await _createSchema(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _ensureSettingsTable(db);
+    }
+  }
+
+  Future<void> _createSchema(Database db) async {
     await db.execute('''
       CREATE TABLE users (
         id TEXT PRIMARY KEY,
@@ -145,6 +156,96 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_payments_bill_id ON payments (bill_id);');
     await db.execute('CREATE INDEX idx_payments_card_id ON payments (card_id);');
     await db.execute('CREATE INDEX idx_payments_payment_date ON payments (payment_date);');
+
+    await _ensureSettingsTable(db);
+  }
+
+  Future<void> _ensureSettingsTable(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(app_settings);');
+    if (columns.isEmpty) {
+      await _createSettingsTable(db);
+      return;
+    }
+
+    final columnNames = columns
+        .map((row) => (row['name'] as String?)?.toLowerCase())
+        .whereType<String>()
+        .toSet();
+    if (columnNames.contains('key')) return;
+
+    // Backward-compatible migration for legacy schemas (e.g. setting_key/value BLOB).
+    // This can occur on databases already at version 2, so we repair in-place
+    // without dropping user data.
+    await db.transaction((txn) async {
+      await txn.execute('DROP TABLE IF EXISTS app_settings_new;');
+      await txn.execute('''
+        CREATE TABLE app_settings_new (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        );
+      ''');
+
+      final oldKeyColumn = columnNames.contains('setting_key')
+          ? 'setting_key'
+          : columnNames.contains('k')
+              ? 'k'
+              : null;
+      final oldValueColumn = columnNames.contains('value')
+          ? 'value'
+          : columnNames.contains('setting_value')
+              ? 'setting_value'
+              : null;
+
+      if (oldKeyColumn != null && oldValueColumn != null) {
+        await txn.execute('''
+          INSERT OR REPLACE INTO app_settings_new (key, value)
+          SELECT CAST($oldKeyColumn AS TEXT), CAST($oldValueColumn AS TEXT)
+          FROM app_settings
+          WHERE $oldKeyColumn IS NOT NULL;
+        ''');
+      }
+
+      await txn.execute('DROP TABLE app_settings;');
+      await txn.execute('ALTER TABLE app_settings_new RENAME TO app_settings;');
+    });
+  }
+
+  Future<void> _createSettingsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      );
+    ''');
+  }
+
+  Future<void> saveAppSetting(String key, String? value) async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    if (value == null) {
+      await db.delete('app_settings', where: 'key = ?', whereArgs: [key]);
+      return;
+    }
+    await db.insert(
+      'app_settings',
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> getAppSetting(String key) async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    final rows = await db.query(
+      'app_settings',
+      columns: ['value'],
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final value = rows.first['value'];
+    return value?.toString();
   }
 
   /// Closes the database connection and resets cached instance.

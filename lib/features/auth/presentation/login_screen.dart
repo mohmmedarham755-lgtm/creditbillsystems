@@ -182,11 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 6),
                           TextFormField(
+                            key: const Key('email_field'),
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
-                              hintText: 'admin@gmail.com',
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
                             validator: (value) {

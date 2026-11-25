@@ -10,6 +10,8 @@ import 'package:creditbillsytems/features/auth/presentation/login_screen.dart';
 import 'package:creditbillsytems/features/bills/presentation/bill_provider.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_provider.dart';
 import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell_screen.dart';
+import 'package:creditbillsytems/features/settings/presentation/logout_confirmation_page.dart';
+import 'package:creditbillsytems/features/settings/presentation/settings_screen.dart';
 import 'package:creditbillsytems/features/bills/data/php_bill_repository.dart';
 import 'package:creditbillsytems/features/bills/domain/bill_repository.dart';
 import 'package:creditbillsytems/features/cards/data/php_card_repository.dart';
@@ -144,13 +146,22 @@ void main() {
       expect(find.byType(DashboardShellScreen), findsOneWidget);
       expect(find.byType(LoginScreen), findsNothing);
 
-      // Tap profile icon in AppBar
-      final profileBtn = find.byIcon(Icons.account_circle_outlined);
-      await tester.tap(profileBtn);
+      // The top-right profile button/popup is gone; Settings is the only
+      // account and information destination.
+      expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
+      expect(find.text('Settings'), findsOneWidget);
+
+      // Log out through the dedicated Settings hub.
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(SettingsScreen.logoutEntryKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(LogoutConfirmationPage.confirmKey));
       await tester.pumpAndSettle();
 
-      // Verify Account bottom sheet is open
-      expect(find.byType(LoginScreen), findsNothing);
+      expect(authProvider.isAuthenticated, isFalse);
+      expect(find.byType(DashboardShellScreen), findsNothing);
+      expect(find.byType(LoginScreen), findsOneWidget);
     });
   });
 }

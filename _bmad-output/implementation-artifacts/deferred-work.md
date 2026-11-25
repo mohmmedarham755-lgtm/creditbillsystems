@@ -55,3 +55,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-3-credit-card-carousel-portfolio-display.md`
   summary: Add automated coverage for Firebase startup initialization and Firestore configuration.
   evidence: The current test suite does not exercise `main()` initialization; this is broader startup verification rather than Story 2.3 behavior.
+- source_spec: `_bmad-output/implementation-artifacts/spec-admin-logo-upload-setting.md`
+  summary: Make the admin logo settings screen compile for Flutter web or explicitly exclude web as a target.
+  evidence: The settings screen imports `dart:io` unconditionally while the project has a web directory and web-specific SQLite setup; a web build would settle whether this is a real failure, but web is not part of the approved local-storage intent or CI.
+- source_spec: `_bmad-output/implementation-artifacts/spec-admin-logo-upload-setting.md`
+  summary: Decide whether to keep or revert toolchain-generated `pubspec.lock` and `.metadata` revisions.
+  evidence: Transitive dependency versions and the local Flutter revision changed without a `pubspec.yaml` edit; no feature logic depends on them, and a toolchain policy decision would settle whether these belong in the change.

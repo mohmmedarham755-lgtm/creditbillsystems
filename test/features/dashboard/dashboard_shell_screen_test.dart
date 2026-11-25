@@ -14,6 +14,9 @@ import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell
 import 'package:creditbillsytems/features/dashboard/presentation/utilization_gauge_widget.dart';
 import 'package:creditbillsytems/features/payments/domain/payment_model.dart';
 import 'package:creditbillsytems/features/payments/domain/payment_repository.dart';
+import 'package:creditbillsytems/features/settings/domain/app_settings.dart';
+import 'package:creditbillsytems/features/settings/domain/settings_repository.dart';
+import 'package:creditbillsytems/features/settings/presentation/settings_screen.dart';
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -113,16 +116,12 @@ class _FakeBillRepository implements BillRepository {
   }
 
   @override
-  Future<void> updateBill({
-    required String userId,
-    required BillModel bill,
-  }) => throw UnimplementedError();
+  Future<void> updateBill({required String userId, required BillModel bill}) =>
+      throw UnimplementedError();
 
   @override
-  Future<void> deleteBill({
-    required String userId,
-    required String billId,
-  }) => throw UnimplementedError();
+  Future<void> deleteBill({required String userId, required String billId}) =>
+      throw UnimplementedError();
 }
 
 class _FakePaymentRepository implements PaymentRepository {
@@ -161,17 +160,34 @@ class _FakePaymentRepository implements PaymentRepository {
   }
 }
 
-Widget _dashboardApp(AuthProvider authProvider, CardProvider cardProvider,
-    {BillProvider? billProvider}) {
+class _FakeSettingsRepository implements SettingsRepository {
+  @override
+  Future<AppSettings> getSettings() async => const AppSettings();
+
+  @override
+  Future<void> saveLogoPath(String? logoPath) async {}
+}
+
+Widget _dashboardApp(
+  AuthProvider authProvider,
+  CardProvider cardProvider, {
+  BillProvider? billProvider,
+  SettingsRepository? settingsRepository,
+}) {
   cardProvider.bindAuthProvider(authProvider);
-  final billProviderInstance = billProvider ?? BillProvider(
-    billRepository: _FakeBillRepository(),
-    authProvider: authProvider,
-    paymentRepository: _FakePaymentRepository(),
-  );
+  final billProviderInstance =
+      billProvider ??
+      BillProvider(
+        billRepository: _FakeBillRepository(),
+        authProvider: authProvider,
+        paymentRepository: _FakePaymentRepository(),
+      );
   billProviderInstance.bindAuthProvider(authProvider);
   return MultiProvider(
     providers: [
+      Provider<SettingsRepository>.value(
+        value: settingsRepository ?? _FakeSettingsRepository(),
+      ),
       ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
       ChangeNotifierProvider<CardProvider>.value(value: cardProvider),
       ChangeNotifierProvider<BillProvider>.value(value: billProviderInstance),
@@ -201,7 +217,8 @@ void main() {
     expect(find.text('+ Add Your First Card'), findsOneWidget);
     expect(find.text('Bills'), findsOneWidget);
     expect(find.text('Calendar'), findsOneWidget);
-    expect(find.byIcon(Icons.account_circle_outlined), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
   });
 
   testWidgets('unauthenticated dashboard does not watch or expose Add Card', (
@@ -223,59 +240,61 @@ void main() {
     expect(find.textContaining('Add'), findsNothing);
   });
 
-  testWidgets('Dashboard shows utilization gauge and metrics when cards loaded', (
-    tester,
-  ) async {
-    final authProvider = AuthProvider(
-      authRepository: _FakeAuthRepository(),
-      listenToAuthChanges: false,
-    )..setUser(uid: 'user-1', email: 'one@example.com');
-    final repository = _FakeCardRepository();
-    final cardProvider = CardProvider(cardRepository: repository);
-    addTearDown(authProvider.dispose);
-    addTearDown(cardProvider.dispose);
+  testWidgets(
+    'Dashboard shows utilization gauge and metrics when cards loaded',
+    (tester) async {
+      final authProvider = AuthProvider(
+        authRepository: _FakeAuthRepository(),
+        listenToAuthChanges: false,
+      )..setUser(uid: 'user-1', email: 'one@example.com');
+      final repository = _FakeCardRepository();
+      final cardProvider = CardProvider(cardRepository: repository);
+      addTearDown(authProvider.dispose);
+      addTearDown(cardProvider.dispose);
 
-    await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
-    expect(repository.watchCalls, 1);
+      await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
+      expect(repository.watchCalls, 1);
 
-    repository.controller.add([
-      const CardModel(
-        id: 'card-1',
-        cardName: 'Test Card',
-        bankName: 'Test Bank',
-        last4Digits: '1234',
-        creditLimit: 5000.0,
-        billingCycleDay: 15,
-        gracePeriodDays: 20,
-        currentBalance: 1500.0,
-      ),
-    ]);
-    await tester.pump();
+      repository.controller.add([
+        const CardModel(
+          id: 'card-1',
+          cardName: 'Test Card',
+          bankName: 'Test Bank',
+          last4Digits: '1234',
+          creditLimit: 5000.0,
+          billingCycleDay: 15,
+          gracePeriodDays: 20,
+          currentBalance: 1500.0,
+        ),
+      ]);
+      await tester.pump();
 
-    // Utilization = 1500 / 5000 * 100 = 30.0%
-    expect(find.text('30.0%'), findsOneWidget);
-    expect(find.text('Total Limit'), findsOneWidget);
-    expect(find.text('Total Unpaid'), findsOneWidget);
-  });
+      // Utilization = 1500 / 5000 * 100 = 30.0%
+      expect(find.text('30.0%'), findsOneWidget);
+      expect(find.text('Total Limit'), findsOneWidget);
+      expect(find.text('Total Unpaid'), findsOneWidget);
+    },
+  );
 
-  testWidgets('Dashboard shows RefreshIndicator when authenticated and loaded', (
-    tester,
-  ) async {
-    final authProvider = AuthProvider(
-      authRepository: _FakeAuthRepository(),
-      listenToAuthChanges: false,
-    )..setUser(uid: 'user-1', email: 'one@example.com');
-    final repository = _FakeCardRepository();
-    final cardProvider = CardProvider(cardRepository: repository);
-    addTearDown(authProvider.dispose);
-    addTearDown(cardProvider.dispose);
+  testWidgets(
+    'Dashboard shows RefreshIndicator when authenticated and loaded',
+    (tester) async {
+      final authProvider = AuthProvider(
+        authRepository: _FakeAuthRepository(),
+        listenToAuthChanges: false,
+      )..setUser(uid: 'user-1', email: 'one@example.com');
+      final repository = _FakeCardRepository();
+      final cardProvider = CardProvider(cardRepository: repository);
+      addTearDown(authProvider.dispose);
+      addTearDown(cardProvider.dispose);
 
-    await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
-    repository.controller.add([]);
-    await tester.pump();
+      await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
+      repository.controller.add([]);
+      await tester.pump();
 
-    expect(find.byType(RefreshIndicator), findsOneWidget);
-  });
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    },
+  );
 
   testWidgets('Dashboard does not show gauge when unauthenticated', (
     tester,
@@ -342,9 +361,7 @@ void main() {
     expect(find.text('\$1,000.00'), findsOneWidget);
   });
 
-  testWidgets('Dashboard shows bills loading state', (
-    tester,
-  ) async {
+  testWidgets('Dashboard shows bills loading state', (tester) async {
     final authProvider = AuthProvider(
       authRepository: _FakeAuthRepository(),
       listenToAuthChanges: false,
@@ -371,9 +388,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
-  testWidgets('Dashboard shows bills error state', (
-    tester,
-  ) async {
+  testWidgets('Dashboard shows bills error state', (tester) async {
     final authProvider = AuthProvider(
       authRepository: _FakeAuthRepository(),
       listenToAuthChanges: false,
@@ -509,9 +524,7 @@ void main() {
     expect(find.text('Card card-4'), findsNothing);
   });
 
-  testWidgets('Dashboard shows unauthenticated bills state', (
-    tester,
-  ) async {
+  testWidgets('Dashboard shows unauthenticated bills state', (tester) async {
     final authProvider = AuthProvider(
       authRepository: _FakeAuthRepository(),
       listenToAuthChanges: false,
@@ -534,5 +547,88 @@ void main() {
     );
 
     expect(find.text('Sign in to view your bills.'), findsOneWidget);
+  });
+
+  testWidgets('Settings tab opens the dedicated hub for signed-in users', (
+    tester,
+  ) async {
+    final authProvider = AuthProvider(
+      authRepository: _FakeAuthRepository(),
+      listenToAuthChanges: false,
+    )..setUser(uid: 'user-1', email: 'user@example.com');
+    final repository = _FakeCardRepository();
+    final cardProvider = CardProvider(cardRepository: repository);
+    addTearDown(authProvider.dispose);
+    addTearDown(cardProvider.dispose);
+
+    await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
+    await tester.pump();
+
+    // Dashboard/Bills/Calendar remain the first three destinations.
+    expect(find.byKey(const Key('dashboard-tab-scroll')), findsOneWidget);
+    expect(find.text('Dashboard'), findsNWidgets(2));
+    expect(find.text('Bills'), findsOneWidget);
+    expect(find.text('Calendar'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
+
+    await tester.tap(find.text('Settings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(SettingsScreen.screenKey), findsOneWidget);
+    expect(find.byKey(SettingsScreen.adminEntryKey), findsOneWidget);
+    expect(find.text('Admin'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.helpSettingsEntryKey), findsOneWidget);
+    expect(find.text('Help & Settings'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.aboutEntryKey), findsOneWidget);
+    expect(find.text('About'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.contactEntryKey), findsOneWidget);
+    expect(find.text('Contact Details'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.versionEntryKey), findsOneWidget);
+    expect(find.text('App Version'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.logoutEntryKey), findsOneWidget);
+    expect(find.text('Log Out'), findsOneWidget);
+    expect(find.text('History'), findsNothing);
+    expect(find.byIcon(Icons.account_circle_outlined), findsNothing);
+  });
+
+  testWidgets('Settings hub navigates without changing primary tabs', (
+    tester,
+  ) async {
+    final authProvider = AuthProvider(
+      authRepository: _FakeAuthRepository(),
+      listenToAuthChanges: false,
+    )..setUser(uid: 'user-1', email: 'user@example.com');
+    final repository = _FakeCardRepository();
+    final cardProvider = CardProvider(cardRepository: repository);
+    addTearDown(authProvider.dispose);
+    addTearDown(cardProvider.dispose);
+
+    await tester.pumpWidget(_dashboardApp(authProvider, cardProvider));
+    await tester.pump();
+    await tester.tap(find.text('Settings'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byKey(SettingsScreen.aboutEntryKey));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(const Key('about-page-content')), findsOneWidget);
+    expect(find.text('What you can do'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(SettingsScreen.screenKey), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.dashboard_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('dashboard-tab-scroll')), findsOneWidget);
+    expect(find.byIcon(Icons.receipt_long_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
   });
 }

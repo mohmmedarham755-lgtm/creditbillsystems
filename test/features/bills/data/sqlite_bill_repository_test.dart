@@ -60,6 +60,7 @@ void main() {
                 remaining_balance REAL NOT NULL,
                 minimum_due REAL NOT NULL,
                 status TEXT NOT NULL,
+                image_path TEXT,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
                 FOREIGN KEY (card_id) REFERENCES cards (id) ON DELETE CASCADE
@@ -173,6 +174,29 @@ void main() {
       expect(await repository.getBill(userId: 'user-1', billId: 'bill-del'), isNotNull);
       await repository.deleteBill(userId: 'user-1', billId: 'bill-del');
       expect(await repository.getBill(userId: 'user-1', billId: 'bill-del'), isNull);
+    });
+
+    test('preserves the optional bill image path', () async {
+      final created = await repository.createBill(
+        userId: 'user-1',
+        bill: BillModel(
+          id: 'bill-image',
+          cardId: 'card-1',
+          statementDate: DateTime(2026, 10, 1),
+          dueDate: DateTime(2026, 10, 20),
+          totalAmountDue: 250.0,
+          remainingBalance: 250.0,
+          minimumDue: 25.0,
+          status: BillStatus.unpaid,
+          imagePath: '/tmp/bill_images/statement.jpg',
+        ),
+      );
+
+      final fetched = await repository.getBill(
+        userId: 'user-1',
+        billId: created.id,
+      );
+      expect(fetched?.imagePath, equals('/tmp/bill_images/statement.jpg'));
     });
   });
 }

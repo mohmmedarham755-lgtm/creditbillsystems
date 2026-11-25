@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/utils/date_formatter.dart';
@@ -10,6 +14,10 @@ import '../../cards/presentation/card_provider.dart';
 import '../domain/bill_model.dart';
 import '../domain/bill_status.dart';
 import 'bill_provider.dart';
+
+typedef BillImagePickCallback = Future<XFile?> Function(ImageSource source);
+typedef BillAppDirectoryCallback = Future<Directory> Function();
+typedef BillImagePreviewBuilder = Widget Function(String path);
 
 /// Displays estimated due date based on the selected card's billing cycle.
 DateTime estimateDueDate({
@@ -62,7 +70,21 @@ Future<void> showBillEntryForm(BuildContext context) {
 }
 
 class BillEntryForm extends StatefulWidget {
-  const BillEntryForm({super.key});
+  const BillEntryForm({
+    super.key,
+    this.pickImage,
+    this.getAppDirectory,
+    this.imagePreviewBuilder,
+  });
+
+  /// Injectable photo picker so tests do not need a platform channel.
+  final BillImagePickCallback? pickImage;
+
+  /// Injectable app directory used to persist the picked bill image.
+  final BillAppDirectoryCallback? getAppDirectory;
+
+  /// Optional preview builder used by tests to avoid decoding real images.
+  final BillImagePreviewBuilder? imagePreviewBuilder;
 
   @override
   State<BillEntryForm> createState() => BillEntryFormState();
@@ -76,6 +98,12 @@ class BillEntryFormState extends State<BillEntryForm> {
   CardModel? selectedCard;
   DateTime? _statementDate;
   DateTime? _estimatedDueDate;
+  String? _imagePath;
+  bool _isPickingImage = false;
+
+  static const Key attachImageKey = Key('bill-entry.attach-image');
+  static const Key removeImageKey = Key('bill-entry.remove-image');
+  static const Key imagePreviewKey = Key('bill-entry.image-preview');
 
   @override
   void dispose() {
@@ -155,6 +183,85 @@ class BillEntryFormState extends State<BillEntryForm> {
     }
   }
 
+  Future<XFile?> _pickImage(ImageSource source) {
+    final picker = widget.pickImage;
+    if (picker != null) return picker(source);
+    return ImagePicker().pickImage(source: source);
+  }
+
+  Future<Directory> _getAppDirectory() {
+    final getter = widget.getAppDirectory;
+    if (getter != null) return getter();
+    return getApplicationDocumentsDirectory();
+  }
+
+  /// Copies the picked photo into app storage and keeps its path for the bill.
+  Future<void> _handleAttachImage() async {
+    if (_isPickingImage) return;
+    setState(() {
+      _isPickingImage = true;
+    });
+
+    try {
+      final picked = await _pickImage(ImageSource.gallery);
+      if (picked == null) return;
+
+      final appDir = await _getAppDirectory();
+      final imageDir = Directory(p.join(appDir.path, 'bills'));
+      if (!imageDir.existsSync()) {
+        imageDir.createSync(recursive: true);
+      }
+
+      final extension = p.extension(picked.path);
+      final safeExtension = extension.isNotEmpty ? extension : '.jpg';
+      final fileName =
+          'bill_${DateTime.now().microsecondsSinceEpoch}$safeExtension';
+      final targetPath = p.join(imageDir.path, fileName);
+
+      try {
+        final source = File(picked.path);
+        if (source.existsSync()) {
+          source.copySync(targetPath);
+        } else {
+          await File(targetPath).writeAsBytes(
+            await picked.readAsBytes(),
+            flush: true,
+          );
+        }
+      } catch (_) {
+        await File(targetPath).writeAsBytes(
+          await picked.readAsBytes(),
+          flush: true,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _imagePath = targetPath;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('Unable to attach bill image. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingImage = false;
+        });
+      }
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _imagePath = null;
+    });
+  }
+
   Future<void> _saveBill() async {
     if (!_formKey.currentState!.validate()) return;
     if (selectedCard == null || _statementDate == null) return;
@@ -173,6 +280,7 @@ class BillEntryFormState extends State<BillEntryForm> {
       remainingBalance: amount,
       minimumDue: amount * 0.10,
       status: BillStatus.unpaid,
+      imagePath: _imagePath,
     );
 
     final saved = await billProvider.createBill(bill: bill);
@@ -247,6 +355,89 @@ class BillEntryFormState extends State<BillEntryForm> {
     return decoration;
   }
 
+  Widget _buildImageAttachment(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasImage = _imagePath != null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: attachImageKey,
+                  onPressed: _isPickingImage ? null : _handleAttachImage,
+                  icon: _isPickingImage
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.image_outlined),
+                  label: Text(
+                    _isPickingImage
+                        ? 'Attaching...'
+                        : hasImage
+                            ? 'Replace bill image'
+                            : 'Attach bill image',
+                  ),
+                ),
+              ),
+              if (hasImage)
+                IconButton(
+                  key: removeImageKey,
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Remove bill image',
+                  onPressed: _removeImage,
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            hasImage
+                ? 'Image attached to this bill.'
+                : 'Optional: add a photo of your statement.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (hasImage) ...[
+            const SizedBox(height: 8),
+            Container(
+              key: imagePreviewKey,
+              height: 110,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.colorScheme.outline),
+              ),
+              child: _buildImagePreview(_imagePath!),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePreview(String path) {
+    final builder = widget.imagePreviewBuilder;
+    if (builder != null) return builder(path);
+
+    final file = File(path);
+    if (!file.existsSync()) {
+      return const Center(child: Icon(Icons.broken_image_outlined));
+    }
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) =>
+          const Center(child: Icon(Icons.broken_image_outlined)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<CardProvider>();
@@ -315,6 +506,7 @@ class BillEntryFormState extends State<BillEntryForm> {
                     decimal: true,
                   ),
                 ),
+                _buildImageAttachment(context),
                 if (errorMessage != null) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),

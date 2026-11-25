@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:creditbillsytems/core/utils/date_formatter.dart';
 import 'package:creditbillsytems/features/auth/domain/auth_repository.dart';
@@ -17,6 +18,7 @@ import 'package:creditbillsytems/features/payments/domain/payment_repository.dar
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class _FakeAuthRepository implements AuthRepository {
@@ -155,10 +157,27 @@ class _FakePaymentRepository implements PaymentRepository {
   }) async {}
 }
 
+/// Creates a unique temp directory synchronously so widget tests, which run
+/// in a fake-async zone, do not wait on real I/O futures.
+Directory _createSyncTempDir() {
+  final dir = Directory(
+    '${Directory.systemTemp.path}${Platform.pathSeparator}'
+    'bill_image_test_${DateTime.now().microsecondsSinceEpoch}',
+  );
+  dir.createSync(recursive: true);
+  addTearDown(() {
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
+  });
+  return dir;
+}
+
 Widget _formApp({
   required CardProvider cardProvider,
   required BillProvider billProvider,
   bool openBillEntryFormAsSheet = false,
+  Future<XFile?> Function(ImageSource source)? pickImage,
+  Future<Directory> Function()? getAppDirectory,
+  Widget Function(String path)? imagePreviewBuilder,
 }) {
   return MultiProvider(
     providers: [
@@ -176,7 +195,11 @@ Widget _formApp({
                   ),
                 ),
               )
-            : const BillEntryForm(),
+            : BillEntryForm(
+                pickImage: pickImage,
+                getAppDirectory: getAppDirectory,
+                imagePreviewBuilder: imagePreviewBuilder,
+              ),
       ),
     ),
   );
@@ -403,6 +426,100 @@ void main() {
 
       expect(find.text('Select a credit card.'), findsOneWidget);
       expect(find.text('Enter a statement amount.'), findsOneWidget);
+    });
+
+    testWidgets('attaches an optional bill image and saves its path', (
+      tester,
+    ) async {
+      final tempDir = _createSyncTempDir();
+      final sourceFile = File(
+        '${tempDir.path}${Platform.pathSeparator}statement.jpg',
+      );
+      sourceFile.writeAsBytesSync([1, 2, 3]);
+
+      await tester.pumpWidget(
+        _formApp(
+          cardProvider: cardProvider,
+          billProvider: billProvider,
+          pickImage: (_) async => XFile(sourceFile.path),
+          getAppDirectory: () async => tempDir,
+          imagePreviewBuilder: (_) => const SizedBox(
+            key: Key('test-bill-image-preview'),
+            height: 10,
+          ),
+        ),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      final formState = tester.state<BillEntryFormState>(
+        find.byType(BillEntryForm),
+      );
+      formState.onCardSelected(_testCard1);
+      formState.onStatementDateChanged(DateTime(2026, 10, 1));
+      final amountField = find.byKey(const Key('bill-entry.statement-amount'));
+      await tester.ensureVisible(amountField);
+      await tester.tap(amountField);
+      await tester.pump();
+      await tester.enterText(amountField, '120.00');
+      await tester.pump();
+
+      await tester.tap(find.byKey(BillEntryFormState.attachImageKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('test-bill-image-preview')), findsOneWidget);
+      expect(find.text('Image attached to this bill.'), findsOneWidget);
+      expect(find.text('Replace bill image'), findsOneWidget);
+
+      final saveButton = find.byKey(const Key('bill-entry.save'));
+      await tester.ensureVisible(saveButton);
+      await tester.tap(saveButton);
+      await tester.pumpAndSettle();
+
+      final savedPath = billRepository.createdBill?.imagePath;
+      expect(savedPath, isNotNull);
+      expect(savedPath, contains('bill_'));
+      expect(File(savedPath!).existsSync(), isTrue);
+    });
+
+    testWidgets('can remove an attached bill image before saving', (
+      tester,
+    ) async {
+      final tempDir = _createSyncTempDir();
+      final sourceFile = File(
+        '${tempDir.path}${Platform.pathSeparator}statement.jpg',
+      );
+      sourceFile.writeAsBytesSync([1, 2, 3]);
+
+      await tester.pumpWidget(
+        _formApp(
+          cardProvider: cardProvider,
+          billProvider: billProvider,
+          pickImage: (_) async => XFile(sourceFile.path),
+          getAppDirectory: () async => tempDir,
+          imagePreviewBuilder: (_) => const SizedBox(
+            key: Key('test-bill-image-preview'),
+            height: 10,
+          ),
+        ),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(BillEntryFormState.attachImageKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('test-bill-image-preview')), findsOneWidget);
+
+      await tester.tap(find.byKey(BillEntryFormState.removeImageKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('test-bill-image-preview')), findsNothing);
+      expect(
+        find.text('Optional: add a photo of your statement.'),
+        findsOneWidget,
+      );
     });
   });
 }

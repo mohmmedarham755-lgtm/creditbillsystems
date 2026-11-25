@@ -103,6 +103,7 @@ void main() {
               remaining_balance REAL NOT NULL,
               minimum_due REAL NOT NULL,
               status TEXT NOT NULL,
+              image_path TEXT,
               created_at TEXT NOT NULL
             );
           ''');

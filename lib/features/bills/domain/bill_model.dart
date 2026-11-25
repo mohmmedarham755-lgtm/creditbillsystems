@@ -11,6 +11,9 @@ class BillModel {
   final double minimumDue;
   final BillStatus status;
 
+  /// Local path to an optional photo of the paper bill statement.
+  final String? imagePath;
+
   const BillModel({
     required this.id,
     required this.cardId,
@@ -20,6 +23,7 @@ class BillModel {
     required this.remainingBalance,
     required this.minimumDue,
     required this.status,
+    this.imagePath,
   });
 
   /// Builds a bill from its API data and document ID.
@@ -45,6 +49,7 @@ class BillModel {
       remainingBalance: remainingBalance,
       minimumDue: minimumDue,
       status: status,
+      imagePath: map['image_path'] as String?,
     );
   }
 
@@ -80,6 +85,7 @@ class BillModel {
       'remaining_balance': remainingBalance,
       'minimum_due': minimumDue,
       'status': status.name,
+      if (imagePath != null) 'image_path': imagePath,
     };
   }
 
@@ -92,6 +98,7 @@ class BillModel {
     double? remainingBalance,
     double? minimumDue,
     BillStatus? status,
+    String? imagePath,
   }) {
     return BillModel(
       id: id ?? this.id,
@@ -102,6 +109,7 @@ class BillModel {
       remainingBalance: remainingBalance ?? this.remainingBalance,
       minimumDue: minimumDue ?? this.minimumDue,
       status: status ?? this.status,
+      imagePath: imagePath ?? this.imagePath,
     );
   }
 }

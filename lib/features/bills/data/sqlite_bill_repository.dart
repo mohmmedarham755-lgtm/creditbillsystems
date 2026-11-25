@@ -47,6 +47,7 @@ class SqliteBillRepository implements BillRepository {
       remainingBalance: remainingBalance,
       minimumDue: minimumDue,
       status: _parseStatus(row['status'] as String),
+      imagePath: row['image_path'] as String?,
     );
 
     // Re-evaluate dynamic overdue status against current date
@@ -99,6 +100,7 @@ class SqliteBillRepository implements BillRepository {
       'remaining_balance': savedBill.remainingBalance,
       'minimum_due': savedBill.minimumDue,
       'status': evaluatedStatus.name,
+      'image_path': savedBill.imagePath,
       'created_at': now.toIso8601String(),
     });
 
@@ -173,6 +175,7 @@ class SqliteBillRepository implements BillRepository {
         'remaining_balance': bill.remainingBalance,
         'minimum_due': bill.minimumDue,
         'status': evaluatedStatus.name,
+        'image_path': bill.imagePath,
       },
       where: 'id = ? AND user_id = ?',
       whereArgs: [bill.id, userId],

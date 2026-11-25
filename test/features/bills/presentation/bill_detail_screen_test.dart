@@ -199,12 +199,14 @@ class _FakePaymentRepository implements PaymentRepository {
 Widget _detailApp({
   required BillModel bill,
   DateTime? referenceDate,
+  Widget Function(String path)? imagePreviewBuilder,
 }) {
   return MaterialApp(
     home: Scaffold(
       body: BillDetailScreen(
         bill: bill,
         referenceDate: referenceDate,
+        imagePreviewBuilder: imagePreviewBuilder,
       ),
     ),
   );
@@ -473,6 +475,37 @@ void main() {
         expect(find.text('Pay Full'), findsOneWidget);
         expect(find.text('Pay Half'), findsOneWidget);
         _resetTestDevice(tester);
+      });
+    });
+
+    group('bill image', () {
+      testWidgets('shows the attached image when a path is saved', (tester) async {
+        final bill = _testBillUnpaid.copyWith(
+          imagePath: '/tmp/statement.jpg',
+        );
+
+        await tester.pumpWidget(
+          _detailApp(
+            bill: bill,
+            imagePreviewBuilder: (_) => const SizedBox(
+              key: Key('test-detail-image'),
+              height: 10,
+            ),
+          ),
+        );
+
+        expect(find.byKey(const Key('bill-detail.image-card')), findsOneWidget);
+        expect(find.text('Bill image'), findsOneWidget);
+        expect(find.byKey(const Key('test-detail-image')), findsOneWidget);
+      });
+
+      testWidgets('hides the image card when no image is attached', (
+        tester,
+      ) async {
+        await tester.pumpWidget(_detailApp(bill: _testBillUnpaid));
+
+        expect(find.byKey(const Key('bill-detail.image-card')), findsNothing);
+        expect(find.text('Bill image'), findsNothing);
       });
     });
   });

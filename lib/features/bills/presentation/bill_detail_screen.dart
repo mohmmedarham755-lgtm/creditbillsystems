@@ -1,3 +1,5 @@
+import 'dart:io';
+
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,10 +17,14 @@ class BillDetailScreen extends StatelessWidget {
   final BillModel bill;
   final DateTime referenceDate;
 
+  /// Optional preview builder used by tests to avoid decoding real images.
+  final Widget Function(String path)? imagePreviewBuilder;
+
   BillDetailScreen({
     super.key,
     required this.bill,
     DateTime? referenceDate,
+    this.imagePreviewBuilder,
   }) : referenceDate = referenceDate ?? DateTime.now();
 
   /// Returns a human-readable payment countdown based on [referenceDate].
@@ -114,6 +120,22 @@ class BillDetailScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildImagePreview(String path) {
+    final builder = imagePreviewBuilder;
+    if (builder != null) return builder(path);
+
+    final file = File(path);
+    if (!file.existsSync()) {
+      return const Center(child: Icon(Icons.broken_image_outlined));
+    }
+    return Image.file(
+      file,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) =>
+          const Center(child: Icon(Icons.broken_image_outlined)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isOverdue = bill.status == BillStatus.overdue;
@@ -187,6 +209,47 @@ class BillDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+            if (bill.imagePath != null && bill.imagePath!.isNotEmpty) ...[
+              const SizedBox(height: 24),
+              Card(
+                key: const Key('bill-detail.image-card'),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.image_outlined),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Bill image',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        key: const Key('bill-detail.image'),
+                        height: 160,
+                        width: double.infinity,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                        child: _buildImagePreview(bill.imagePath!),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             // Payment History Section
             if (payments.isNotEmpty) ...[

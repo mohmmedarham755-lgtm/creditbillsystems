@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 /// Database management helper for the local SQLite database.
 class DatabaseHelper {
   static const String _databaseName = 'credit_bill_system.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   static DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -57,6 +57,26 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _ensureSettingsTable(db);
+    }
+    if (oldVersion < 3) {
+      await _ensureBillImageColumn(db);
+    }
+  }
+
+  /// Adds the optional bill-statement image column to legacy databases.
+  Future<void> _ensureBillImageColumn(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='bills';",
+    );
+    if (tables.isEmpty) return;
+
+    final columns = await db.rawQuery('PRAGMA table_info(bills);');
+    final hasColumn = columns
+        .map((row) => (row['name'] as String?)?.toLowerCase())
+        .whereType<String>()
+        .contains('image_path');
+    if (!hasColumn) {
+      await db.execute('ALTER TABLE bills ADD COLUMN image_path TEXT;');
     }
   }
 
@@ -127,11 +147,13 @@ class DatabaseHelper {
         remaining_balance REAL NOT NULL,
         minimum_due REAL NOT NULL,
         status TEXT NOT NULL,
+        image_path TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
         FOREIGN KEY (card_id) REFERENCES cards (id) ON DELETE CASCADE
       );
     ''');
+    await _ensureBillImageColumn(db);
     await db.execute('CREATE INDEX idx_bills_user_id ON bills (user_id);');
     await db.execute('CREATE INDEX idx_bills_card_id ON bills (card_id);');
     await db.execute('CREATE INDEX idx_bills_due_date ON bills (due_date);');

@@ -7,7 +7,9 @@ import 'package:creditbillsytems/core/theme/app_theme.dart';
 import 'package:creditbillsytems/features/auth/domain/auth_repository.dart';
 import 'package:creditbillsytems/features/auth/domain/user_model.dart';
 import 'package:creditbillsytems/features/auth/presentation/auth_provider.dart';
+import 'package:creditbillsytems/features/auth/presentation/login_screen.dart';
 import 'package:creditbillsytems/features/auth/presentation/register_screen.dart';
+import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell_screen.dart';
 
 class MockAuthRepo implements AuthRepository {
   bool registerCalled = false;
@@ -247,7 +249,7 @@ void main() {
       expect(find.text('This email is already in use.'), findsOneWidget);
     });
 
-    testWidgets('triggers registration and navigates on valid submission', (tester) async {
+    testWidgets('saves the account then returns to Login without opening Dashboard', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -282,6 +284,9 @@ void main() {
       expect(mockRepo.lastPassword, 'securePass123');
       expect(mockRepo.lastDisplayName, 'Daniel');
       expect(find.text('Account created successfully!'), findsOneWidget);
+      expect(authProvider.isAuthenticated, isFalse);
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.byType(DashboardShellScreen), findsNothing);
     });
   });
 }

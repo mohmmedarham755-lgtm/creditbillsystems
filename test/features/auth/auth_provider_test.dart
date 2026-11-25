@@ -151,7 +151,7 @@ void main() {
       seededProvider.dispose();
     });
 
-    test('successful registration updates user state and returns true', () async {
+    test('successful registration saves the account without opening a session', () async {
       final success = await authProvider.register(
         email: 'alice@example.com',
         password: 'secretPassword123',
@@ -160,11 +160,12 @@ void main() {
 
       expect(success, isTrue);
       expect(authProvider.isLoading, isFalse);
-      expect(authProvider.isAuthenticated, isTrue);
-      expect(authProvider.userId, 'generated-uid-123');
-      expect(authProvider.userEmail, 'alice@example.com');
-      expect(authProvider.currentUser?.displayName, 'Alice');
+      expect(authProvider.isAuthenticated, isFalse);
+      expect(authProvider.userId, isNull);
+      expect(authProvider.userEmail, isNull);
+      expect(authProvider.currentUser, isNull);
       expect(authProvider.errorMessage, isNull);
+      expect(fakeRepo.signOutCalled, isTrue);
 
       expect(fakeRepo.registeredEmail, 'alice@example.com');
       expect(fakeRepo.registeredPassword, 'secretPassword123');

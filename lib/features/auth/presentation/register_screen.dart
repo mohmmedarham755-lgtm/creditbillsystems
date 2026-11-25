@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../dashboard/presentation/dashboard_shell_screen.dart';
 import 'auth_provider.dart';
 import 'login_screen.dart';
 
@@ -63,9 +62,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
 
-      // Navigate to Dashboard shell replacing current route
+      // Return to Login so the new user signs in with their credentials.
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardShellScreen()),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     }
   }

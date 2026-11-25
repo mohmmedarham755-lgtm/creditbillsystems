@@ -91,6 +91,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Registers a new user with [email] and [password].
+  ///
+  /// The account is saved, but registration does not leave an active session:
+  /// the user returns to the login screen and signs in with the new
+  /// credentials instead of being taken to the dashboard.
   /// Returns `true` if registration succeeded, `false` otherwise.
   Future<bool> register({
     required String email,
@@ -102,15 +106,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final user = await _authRepository.registerWithEmailAndPassword(
+      await _authRepository.registerWithEmailAndPassword(
         email: email,
         password: password,
         displayName: displayName,
       );
 
-      _userId = user.uid;
-      _userEmail = user.email;
-      _currentUser = user;
+      // Both repositories create a session while registering. Clear it so
+      // signing up never opens the dashboard or restores a session on restart.
+      try {
+        await _authRepository.signOut();
+      } finally {
+        _userId = null;
+        _userEmail = null;
+        _currentUser = null;
+      }
       _errorMessage = null;
       _isLoading = false;
       notifyListeners();

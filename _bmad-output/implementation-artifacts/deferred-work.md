@@ -61,3 +61,39 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-admin-logo-upload-setting.md`
   summary: Decide whether to keep or revert toolchain-generated `pubspec.lock` and `.metadata` revisions.
   evidence: Transitive dependency versions and the local Flutter revision changed without a `pubspec.yaml` edit; no feature logic depends on them, and a toolchain policy decision would settle whether these belong in the change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Reconcile the dashboard app-bar logo preview with the earlier frozen "Settings page only" branding placement.
+  evidence: The staged settings work renders `_buildBrandLogo` in the dashboard AppBar for all signed-in users, while `spec-admin-logo-upload-setting.md` froze logo placement to the Settings page; the earlier logo story introduced it, not this navigation change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Remove or actually use the unreferenced `assets/images/setting.jpg` and correct the earlier spec's "untouched" claim.
+  evidence: The asset and its `pubspec.yaml` entry are staged but no Dart code references them; `spec-admin-logo-upload-setting.md` still describes the asset as unrelated/uncommitted, so the spec claim is stale.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Decide whether to keep or revert toolchain-generated `.metadata` and `pubspec.lock` revisions.
+  evidence: Root/channel revisions and several transitive dependency versions changed without a `pubspec.yaml` constraint edit; no feature logic in this navigation change depends on them, and a toolchain policy decision would settle whether they belong in the change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Make the App Version page read from one source of truth or add a drift test against `pubspec.yaml`.
+  evidence: `lib/core/constants/app_version.dart` duplicates the package version with only a "keep in sync" comment; a build could display a stale version without any test failing.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Make legacy `app_settings` repair preserve or explicitly migrate rows with unrecognized columns instead of rebuilding the table destructively.
+  evidence: `DatabaseHelper._ensureSettingsTable` drops and recreates `app_settings` when no recognized key/value column is present, silently discarding rows in an unknown legacy schema; the migration predates this navigation change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Restrict lost-image recovery to picker-cancel flows and serialize it with uploads.
+  evidence: `AdminHelpSettingsScreen._loadSettings` awaits `_recoverLostImage()` on every settings load, and recovery does not set `_isSaving`, so startup can persist a lost image over the current logo and a concurrent upload can race; the behavior predates this navigation change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Verify lost-image retrieval failure handling on non-Android platforms.
+  evidence: `retrieveLostData` may throw `UnimplementedError` outside Android; a real iOS/desktop picker-cancel run would settle whether the current catch shows a false error. The behavior predates this navigation change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Add widget coverage for dashboard AppBar brand logo loading and fallback.
+  evidence: Dashboard tests never provide a repository with a real logo path and never assert `dashboard-brand-logo` or `dashboard-brand-logo-fallback`, so the AppBar preview could regress with a green suite; the branding predates this navigation change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-dedicated-settings-screen.md`
+  summary: Re-evaluate the `dart:io` web compilation risk for dashboard and settings screens.
+  evidence: Both files import `dart:io` unconditionally while the project has web-specific SQLite setup; a `flutter build web` run would settle whether web is a real target, and web is outside the approved local-storage intent. Already logged from the earlier logo spec; re-flagged by this review.

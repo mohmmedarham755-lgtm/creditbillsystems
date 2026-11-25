@@ -2,7 +2,7 @@
 title: 'Dedicated Settings Screen'
 type: 'feature'
 created: '2026-11-25'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '86f88dda44a0cb300b47dd780e6fae000c53c891'
 review_loop_iteration: 0
@@ -106,13 +106,17 @@ Grouping & cascade: B2+E1+V2 route to patch (stale dashboard logo through Admin 
 ## Implementation Notes
 
 - `SettingsScreen` intentionally owns no `Scaffold`/`AppBar`; it is a `ListView` body inside the dashboard shell to avoid duplicate title bars.
-- Hub keys: `settings-screen`, `admin-page-tile`, `help-settings-tile`, `about-page-tile`, `contact-details-tile`, `app-version-page-tile`, `logout-confirmation-tile`. Existing page keys were reused instead of inventing parallel ones.
+- Hub keys: `settings-screen`, `settings-account-header`, `admin-page-tile`, `help-settings-tile`, `about-page-tile`, `contact-details-tile`, `app-version-page-tile`, `logout-confirmation-tile`. Existing page keys were reused instead of inventing parallel ones.
+- The non-interactive account header preserves the display name/email previously shown in the removed profile popup; it is not a seventh action tile.
 - Missing `SettingsRepository?` is handled with the same non-blocking SnackBar message used by the previous account menu; Admin and Help & Settings entries remain visible.
 - Verification run 2026-11-25: `flutter analyze` clean; targeted suite 36/36 passed; full suite 470/470 passed.
+- Post-review patches applied: async Admin-route `onLogoChanged`, account identity header, focused tests, and corrected `seededAdminEmail` comment.
+- Post-patch verification 2026-11-25: `flutter analyze` clean; targeted suite 38/38 passed; full suite 472/472 passed.
+- Deferred findings were appended to `_bmad-output/implementation-artifacts/deferred-work.md`.
 
 ## Verification
 
-**Commands:**
-- `flutter analyze` -- expected: no issues
-- `flutter test test/features/settings test/features/dashboard/dashboard_shell_screen_test.dart test/features/auth/secure_logout_test.dart` -- expected: targeted tests pass
-- `flutter test` -- expected: full suite passes
+**Commands and results:**
+- `flutter analyze` -- no issues
+- `flutter test test/features/settings test/features/dashboard/dashboard_shell_screen_test.dart test/features/auth/secure_logout_test.dart` -- 38/38 passed
+- `flutter test` -- 472/472 passed

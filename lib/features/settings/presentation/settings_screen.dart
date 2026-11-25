@@ -24,6 +24,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback? onLogoChanged;
 
   static const Key screenKey = Key('settings-screen');
+  static const Key accountHeaderKey = Key('settings-account-header');
   static const Key adminEntryKey = Key('admin-page-tile');
   static const Key helpSettingsEntryKey = Key('help-settings-tile');
   static const Key aboutEntryKey = Key('about-page-tile');
@@ -33,10 +34,33 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return ListView(
       key: screenKey,
       padding: const EdgeInsets.symmetric(vertical: 8),
       children: [
+        Padding(
+          key: accountHeaderKey,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                authProvider.currentUser?.displayName ?? 'Account',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                authProvider.userEmail ?? 'Logged In User',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
         _SettingsEntry(
           entryKey: adminEntryKey,
           icon: Icons.admin_panel_settings_outlined,
@@ -98,17 +122,18 @@ class SettingsScreen extends StatelessWidget {
     await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
-  void _openAdmin(BuildContext context) {
+  Future<void> _openAdmin(BuildContext context) async {
     final repository = context.read<SettingsRepository?>();
     if (repository == null) {
       _showSettingsUnavailable(context);
       return;
     }
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => AdminLogoInputPage(settingsRepository: repository),
       ),
     );
+    if (context.mounted) onLogoChanged?.call();
   }
 
   Future<void> _openHelpSettings(BuildContext context) async {

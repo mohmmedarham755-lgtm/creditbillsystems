@@ -3,7 +3,7 @@ import 'package:creditbillsytems/core/security/password_hasher.dart';
 import 'package:creditbillsytems/core/utils/id_generator.dart';
 import 'package:creditbillsytems/core/auth/token_storage.dart';
 
-/// Email of the seeded admin account; also used for admin-only UI gating.
+/// Email of the seeded admin account.
 const String seededAdminEmail = 'admin@gmail.com';
 
 /// Ensures a default admin account exists. Called after DB init.

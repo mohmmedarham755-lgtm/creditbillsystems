@@ -72,6 +72,7 @@ Widget _hubApp(
   AuthProvider authProvider, {
   SettingsRepository? settingsRepository,
   bool provideSettingsRepository = true,
+  VoidCallback? onLogoChanged,
 }) {
   return MultiProvider(
     providers: [
@@ -82,7 +83,7 @@ Widget _hubApp(
       ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
     ],
     child: MaterialApp(
-      home: const Scaffold(body: SettingsScreen()),
+      home: Scaffold(body: SettingsScreen(onLogoChanged: onLogoChanged)),
       routes: {'/login': (_) => const LoginScreen()},
     ),
   );
@@ -125,6 +126,43 @@ void main() {
     expect(find.byKey(SettingsScreen.logoutEntryKey), findsOneWidget);
     expect(find.text('Log Out'), findsOneWidget);
     expect(find.text('History'), findsNothing);
+  });
+
+  testWidgets('hub preserves account identity without adding an action tile', (
+    tester,
+  ) async {
+    final auth = _signedInAuthProvider();
+    addTearDown(auth.dispose);
+
+    await tester.pumpWidget(_hubApp(auth));
+
+    expect(find.byKey(SettingsScreen.accountHeaderKey), findsOneWidget);
+    expect(find.text('user'), findsOneWidget);
+    expect(find.text('user@example.com'), findsOneWidget);
+    expect(find.byType(ListTile), findsNWidgets(6));
+  });
+
+  testWidgets('popping the Admin route triggers the logo refresh callback', (
+    tester,
+  ) async {
+    final auth = _signedInAuthProvider();
+    addTearDown(auth.dispose);
+    var refreshCalls = 0;
+
+    await tester.pumpWidget(
+      _hubApp(auth, onLogoChanged: () => refreshCalls++),
+    );
+    await tester.tap(find.byKey(SettingsScreen.adminEntryKey));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(AdminLogoInputPage.pageKey), findsOneWidget);
+    expect(refreshCalls, 0);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(SettingsScreen.screenKey), findsOneWidget);
+    expect(refreshCalls, 1);
   });
 
   testWidgets('each entry opens its existing page and returns to the hub', (

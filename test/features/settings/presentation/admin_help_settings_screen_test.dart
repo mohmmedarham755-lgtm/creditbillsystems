@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:creditbillsytems/features/settings/domain/app_settings.dart';
 import 'package:creditbillsytems/features/settings/domain/settings_repository.dart';
 import 'package:creditbillsytems/features/settings/presentation/admin_help_settings_screen.dart';
+import 'package:creditbillsytems/features/settings/presentation/admin_logo_input_page.dart';
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -317,5 +318,41 @@ void main() {
     expect(File(repo.lastSavedLogoPath!).existsSync(), isTrue);
     expect(find.byKey(AdminHelpSettingsScreen.logoPreviewKey), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
+  });
+
+  testWidgets('Admin Logo Input page shows upload help above the uploader', (
+    tester,
+  ) async {
+    final repo = _FakeSettingsRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AdminLogoInputPage(
+          settingsRepository: repo,
+          getAppDirectory: () async => appDir,
+          retrieveLostData: () async => LostDataResponse.empty(),
+          logoPreviewBuilder: (_) => const SizedBox(
+            key: AdminHelpSettingsScreen.logoPreviewKey,
+            width: 120,
+            height: 120,
+          ),
+        ),
+      ),
+    );
+    await pumpSettled(tester);
+
+    expect(find.byKey(AdminLogoInputPage.pageKey), findsOneWidget);
+    expect(find.byKey(AdminHelpSettingsScreen.logoHelpKey), findsOneWidget);
+    expect(find.text('Logo upload help'), findsOneWidget);
+    expect(find.textContaining('Choose a clear image'), findsOneWidget);
+    expect(find.byKey(AdminHelpSettingsScreen.uploadButtonKey), findsOneWidget);
+
+    final helpRect = tester.getRect(
+      find.byKey(AdminHelpSettingsScreen.logoHelpKey),
+    );
+    final uploadRect = tester.getRect(
+      find.byKey(AdminHelpSettingsScreen.uploadButtonKey),
+    );
+    expect(helpRect.bottom, lessThan(uploadRect.top));
   });
 }

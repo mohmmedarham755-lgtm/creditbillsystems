@@ -32,6 +32,7 @@ class AdminLogoInputPage extends StatelessWidget {
         child: AdminHelpSettingsScreen(
           settingsRepository: settingsRepository,
           showHelpSection: false,
+          showLogoHelp: true,
           pickImage: pickImage,
           retrieveLostData: retrieveLostData,
           getAppDirectory: getAppDirectory,

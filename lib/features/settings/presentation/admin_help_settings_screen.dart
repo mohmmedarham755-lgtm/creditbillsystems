@@ -25,6 +25,9 @@ class AdminHelpSettingsScreen extends StatefulWidget {
   /// When false, only the logo-upload card is shown.
   final bool showHelpSection;
 
+  /// When true, shows compact logo-upload instructions above the upload card.
+  final bool showLogoHelp;
+
   /// Optional action that opens the dedicated Admin Logo Input page.
   final VoidCallback? onOpenLogoInput;
 
@@ -36,6 +39,7 @@ class AdminHelpSettingsScreen extends StatefulWidget {
     this.getAppDirectory,
     this.logoPreviewBuilder,
     this.showHelpSection = true,
+    this.showLogoHelp = false,
     this.onOpenLogoInput,
   });
 
@@ -47,6 +51,9 @@ class AdminHelpSettingsScreen extends StatefulWidget {
 
   @visibleForTesting
   static const Key fallbackIconKey = Key('admin-logo-fallback');
+
+  @visibleForTesting
+  static const Key logoHelpKey = Key('admin-logo-help');
 
   @override
   State<AdminHelpSettingsScreen> createState() =>
@@ -295,6 +302,48 @@ class _AdminHelpSettingsScreenState extends State<AdminHelpSettingsScreen> {
                           const Text(
                             'Credit Bill System helps you track cards, bills, payments, and due dates in one place. '
                             'Use the Dashboard for an overview, Bills to manage statements, and Calendar for upcoming due dates.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (widget.showLogoHelp) ...[
+                  Card(
+                    key: AdminHelpSettingsScreen.logoHelpKey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.help_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Logo upload help',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Choose a clear image from your gallery. The logo is saved on this device and shown on the Settings page.',
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'You can replace it at any time with the button below.',
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'If an upload fails, contact the admin and try again.',
                           ),
                         ],
                       ),

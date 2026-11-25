@@ -260,10 +260,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Reset Password'), findsOneWidget); // AppBar title
-      expect(
-        find.widgetWithText(ElevatedButton, 'Send Reset Link'),
-        findsOneWidget,
-      );
+      expect(find.text('Forgot Password?'), findsOneWidget);
+      expect(find.text('mohmmedarham755@gmail.com'), findsOneWidget);
+      expect(find.text('0782005488'), findsOneWidget);
     });
   });
 }

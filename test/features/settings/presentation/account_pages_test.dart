@@ -174,8 +174,8 @@ void main() {
     await tester.pumpWidget(_pageApp(const ContactDetailsPage()));
     await tester.pump();
     expect(find.byKey(ContactDetailsPage.emailKey), findsOneWidget);
-    expect(find.text(ContactDetailsPage.supportEmail), findsOneWidget);
-    expect(find.text(ContactDetailsPage.supportPhone), findsOneWidget);
+    expect(find.text('mohmmedarham755@gmail.com'), findsOneWidget);
+    expect(find.text('0782005488'), findsOneWidget);
   });
 
   testWidgets('App Version page shows the configured version', (tester) async {

@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 class ContactDetailsPage extends StatelessWidget {
   const ContactDetailsPage({super.key});
 
-  static const String supportEmail = 'support@creditbillsytems.com';
-  static const String supportPhone = '+91 98765 43210';
+  static const String supportEmail = 'mohmmedarham755@gmail.com';
+  static const String supportPhone = '0782005488';
 
   static const Key emailKey = Key('contact-email');
   static const Key phoneKey = Key('contact-phone');
@@ -37,7 +37,7 @@ class ContactDetailsPage extends StatelessWidget {
           ListTile(
             key: phoneKey,
             leading: Icon(Icons.phone_outlined),
-            title: Text('Phone'),
+            title: Text('Contact Number'),
             subtitle: SelectableText(supportPhone),
           ),
         ],

@@ -24,6 +24,7 @@ import 'features/payments/data/sqlite_payment_repository.dart';
 import 'features/payments/domain/payment_repository.dart';
 import 'features/settings/data/sqlite_settings_repository.dart';
 import 'features/settings/domain/settings_repository.dart';
+import 'features/settings/domain/welcome_layout.dart';
 import 'welcome_screen.dart';
 
 Widget buildAppWithProviders({
@@ -126,6 +127,9 @@ Future<void> main() async {
   // Initialize admin account
   final tokenStorage = TokenStorageImpl();
   await ensureAdminAccount(dbHelper, tokenStorage);
+
+  // Restore any customized welcome page action order.
+  await WelcomeLayout.load(SqliteSettingsRepository(dbHelper: dbHelper));
 
   // Start application
   runApp(

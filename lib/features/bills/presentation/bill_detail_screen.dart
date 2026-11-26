@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
+import '../../cards/presentation/card_display_name.dart';
 import '../../payments/domain/payment_model.dart';
 import '../domain/bill_model.dart';
 import '../domain/bill_status.dart';
@@ -163,7 +164,8 @@ class BillDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Card ${bill.cardId}',
+                      cardDisplayName(context, bill.cardId),
+                      key: const Key('bill-detail.card-name'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),

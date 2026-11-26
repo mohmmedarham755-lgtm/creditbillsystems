@@ -9,6 +9,8 @@ import 'package:creditbillsytems/features/cards/domain/card_repository.dart';
 import 'package:creditbillsytems/features/cards/presentation/add_card_bottom_sheet.dart';
 import 'package:creditbillsytems/features/cards/presentation/card_provider.dart';
 import 'package:creditbillsytems/features/dashboard/presentation/dashboard_shell_screen.dart';
+import 'package:creditbillsytems/features/settings/domain/app_settings.dart';
+import 'package:creditbillsytems/features/settings/domain/settings_repository.dart';
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,17 +98,45 @@ class FakeCardRepository implements CardRepository {
   }
 }
 
+class FakeSettingsRepository implements SettingsRepository {
+  FakeSettingsRepository({this.bankName});
+
+  String? bankName;
+
+  @override
+  Future<AppSettings> getSettings() async => AppSettings(bankName: bankName);
+
+  @override
+  Future<void> saveLogoPath(String? logoPath) async {}
+
+  @override
+  Future<List<String>?> getWelcomeOrder() async => null;
+
+  @override
+  Future<void> saveWelcomeOrder(List<String> order) async {}
+
+  @override
+  Future<String?> getBankName() async => bankName;
+
+  @override
+  Future<void> saveBankName(String? bankName) async {
+    this.bankName = bankName;
+  }
+}
+
 Widget testApp({
   required AuthProvider authProvider,
   required CardProvider cardProvider,
   Widget home = const DashboardShellScreen(),
   Locale? locale,
+  SettingsRepository? settingsRepository,
 }) {
   cardProvider.bindAuthProvider(authProvider);
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
       ChangeNotifierProvider<CardProvider>.value(value: cardProvider),
+      Provider<SettingsRepository?>.value(value: settingsRepository),
     ],
     child: CreditBillApp(home: home, locale: locale),
   );
@@ -162,6 +192,83 @@ void main() {
       expect(find.byKey(const Key('add-card.last-four')), findsOneWidget);
       expect(find.textContaining('full card number'), findsNothing);
       expect(find.textContaining('CVV'), findsNothing);
+    });
+
+    testWidgets('prefills the bank selected in Settings for a new card', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        testApp(
+          authProvider: authProvider,
+          cardProvider: cardProvider,
+          home: const Scaffold(body: _OpenAddCardButton()),
+          settingsRepository: FakeSettingsRepository(
+            bankName: "People's Bank",
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open form'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextFormField>(find.byKey(const Key('add-card.bank')))
+            .controller!
+            .text,
+        "People's Bank",
+      );
+    });
+
+    testWidgets('bank field opens a scrollable picker that fills the field', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        testApp(
+          authProvider: authProvider,
+          cardProvider: cardProvider,
+          home: const Scaffold(body: _OpenAddCardButton()),
+        ),
+      );
+      await tester.tap(find.text('Open form'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('add-card.bank-picker')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('bank-picker-sheet')), findsOneWidget);
+      expect(find.text('Choose bank'), findsOneWidget);
+      expect(find.text("People's Bank"), findsOneWidget);
+      expect(find.text('Bank of Ceylon (BOC)'), findsOneWidget);
+
+      await tester.tap(find.text('Sampath Bank'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('bank-picker-sheet')), findsNothing);
+      expect(
+        tester.widget<TextFormField>(find.byKey(const Key('add-card.bank')))
+            .controller!
+            .text,
+        'Sampath Bank',
+      );
+    });
+
+    testWidgets('bank picker filters names by search text', (tester) async {
+      await tester.pumpWidget(
+        testApp(
+          authProvider: authProvider,
+          cardProvider: cardProvider,
+          home: const Scaffold(body: _OpenAddCardButton()),
+        ),
+      );
+      await tester.tap(find.text('Open form'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add-card.bank-picker')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('bank-picker-search')), 'hatton');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hatton National Bank (HNB)'), findsOneWidget);
+      expect(find.text('Sampath Bank'), findsNothing);
     });
 
     testWidgets(

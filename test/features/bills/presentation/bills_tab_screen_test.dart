@@ -603,7 +603,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('No bills yet.'), findsOneWidget);
-      expect(find.text('Tap "Log Bill" to record your first statement.'), findsOneWidget);
+      expect(find.text('Tap "Add Bill" to record your first statement.'), findsOneWidget);
 
       authProvider.dispose();
       cardProvider.dispose();
@@ -647,6 +647,66 @@ void main() {
       expect(find.byType(BillDetailScreen), findsOneWidget);
       expect(find.text('Card card-1'), findsOneWidget);
       expect(find.text('20 Dec 2026'), findsOneWidget);
+
+      authProvider.dispose();
+      cardProvider.dispose();
+      billProvider.dispose();
+      paymentRepository.dispose();
+    });
+
+    testWidgets('Record Payment button appears only on payable bills', (
+      tester,
+    ) async {
+      final authProvider = AuthProvider(
+        authRepository: authRepository,
+        listenToAuthChanges: false,
+      )..setUser(uid: 'user-1', email: 'one@example.com');
+      final cardRepository = _FakeCardRepository();
+      final cardProvider = CardProvider(cardRepository: cardRepository);
+      final billRepository = _FakeBillRepository();
+      final paymentRepository = _FakePaymentRepository();
+      final billProvider = BillProvider(
+        billRepository: billRepository,
+        authProvider: authProvider,
+        paymentRepository: paymentRepository,
+      );
+
+      await tester.pumpWidget(_billsTabApp(
+        authProvider: authProvider,
+        cardProvider: cardProvider,
+        billProvider: billProvider,
+      ));
+
+      paymentRepository.controller.add([]);
+      billRepository.controller
+          .add([_testBillUnpaid, _testBillPaid, _testBillOverdue]);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      // Unpaid and overdue bills have the button; paid bills do not.
+      expect(
+        find.byKey(const Key('bills-tab.record-payment-bill-unpaid')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('bills-tab.record-payment-bill-overdue')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('bills-tab.record-payment-bill-paid')),
+        findsNothing,
+      );
+
+      // Tapping opens the payment logger sheet.
+      await tester.tap(
+        find.byKey(const Key('bills-tab.record-payment-bill-unpaid')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Record Payment'), findsWidgets);
+      expect(find.text('Pay Full'), findsOneWidget);
 
       authProvider.dispose();
       cardProvider.dispose();

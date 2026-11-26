@@ -166,6 +166,18 @@ class _FakeSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> saveLogoPath(String? logoPath) async {}
+
+  @override
+  Future<List<String>?> getWelcomeOrder() async => null;
+
+  @override
+  Future<void> saveWelcomeOrder(List<String> order) async {}
+
+  @override
+  Future<String?> getBankName() async => null;
+
+  @override
+  Future<void> saveBankName(String? bankName) async {}
 }
 
 Widget _dashboardApp(
@@ -273,6 +285,17 @@ void main() {
       expect(find.text('30.0%'), findsOneWidget);
       expect(find.text('Total Limit'), findsOneWidget);
       expect(find.text('Total Unpaid'), findsOneWidget);
+      expect(
+        find.byKey(const Key('dashboard-utilization-gauge-center')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('dashboard-utilization-gauge-center')),
+          matching: find.byType(UtilizationGaugeWidget),
+        ),
+        findsOneWidget,
+      );
     },
   );
 
@@ -586,6 +609,12 @@ void main() {
     expect(find.text('About'), findsOneWidget);
     expect(find.byKey(SettingsScreen.contactEntryKey), findsOneWidget);
     expect(find.text('Contact Details'), findsOneWidget);
+
+    // The hub now has eight tiles; bring the last one into view before
+    // asserting on it.
+    await tester.drag(find.byKey(SettingsScreen.screenKey), const Offset(0, -300));
+    await tester.pump();
+
     expect(find.byKey(SettingsScreen.versionEntryKey), findsOneWidget);
     expect(find.text('App Version'), findsOneWidget);
     expect(find.byKey(SettingsScreen.logoutEntryKey), findsOneWidget);

@@ -509,4 +509,54 @@ void main() {
       });
     });
   });
+
+  testWidgets('shows the saved card nickname instead of the card id', (
+    tester,
+  ) async {
+    final auth = AuthProvider(
+      authRepository: _FakeAuthRepository(),
+      listenToAuthChanges: false,
+    )..setUser(uid: 'user-1', email: 'one@example.com');
+    final cardRepository = _FakeCardRepository();
+    final cards = CardProvider(cardRepository: cardRepository)
+      ..bindAuthProvider(auth);
+    final bills = BillProvider(
+      billRepository: _FakeBillRepository(),
+      authProvider: auth,
+      paymentRepository: _FakePaymentRepository(),
+    );
+    addTearDown(() {
+      auth.dispose();
+      cards.dispose();
+      bills.dispose();
+    });
+
+    await tester.pumpWidget(
+      _detailAppWithProviders(
+        bill: _testBillUnpaid,
+        authProvider: auth,
+        cardProvider: cards,
+        billProvider: bills,
+      ),
+    );
+
+    cardRepository.controller.add([
+      const CardModel(
+        id: 'card-1',
+        cardName: 'Travel Rewards',
+        bankName: 'Sampath Bank',
+        last4Digits: '1234',
+        creditLimit: 5000,
+        billingCycleDay: 12,
+        gracePeriodDays: 21,
+        currentBalance: 500,
+      ),
+    ]);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byKey(const Key('bill-detail.card-name')), findsOneWidget);
+    expect(find.text('Travel Rewards'), findsOneWidget);
+    expect(find.text('Card card-1'), findsNothing);
+  });
 }

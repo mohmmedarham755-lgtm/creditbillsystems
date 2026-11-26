@@ -130,6 +130,18 @@ class _FakeSettingsRepository implements SettingsRepository {
   Future<AppSettings> getSettings() async => const AppSettings();
   @override
   Future<void> saveLogoPath(String? logoPath) async {}
+
+  @override
+  Future<List<String>?> getWelcomeOrder() async => null;
+
+  @override
+  Future<void> saveWelcomeOrder(List<String> order) async {}
+
+  @override
+  Future<String?> getBankName() async => null;
+
+  @override
+  Future<void> saveBankName(String? bankName) async {}
 }
 
 Widget _pageApp(Widget page) {

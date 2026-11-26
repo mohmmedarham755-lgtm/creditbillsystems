@@ -44,6 +44,18 @@ class _FakeSettingsRepository implements SettingsRepository {
     lastSavedLogoPath = logoPath;
     settings = AppSettings(logoPath: logoPath);
   }
+
+  @override
+  Future<List<String>?> getWelcomeOrder() async => null;
+
+  @override
+  Future<void> saveWelcomeOrder(List<String> order) async {}
+
+  @override
+  Future<String?> getBankName() async => null;
+
+  @override
+  Future<void> saveBankName(String? bankName) async {}
 }
 
 void main() {

@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import 'core/constants/app_colors.dart';
 import 'features/auth/presentation/auth_gate.dart';
+import 'features/settings/domain/welcome_layout.dart';
+import 'features/settings/presentation/contact_details_page.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key, this.onGetStarted});
@@ -19,6 +21,14 @@ class WelcomeScreen extends StatelessWidget {
   static const Key heroKey = Key('welcome-hero');
   static const Key featuresKey = Key('welcome-features');
   static const Key getStartedKey = Key('welcome-get-started');
+  static const Key helpKey = Key('welcome-help');
+  static const Key settingsKey = Key('welcome-settings');
+  static const Key settingsDialogStartKey = Key('welcome-settings-start');
+  static const Key helpDialogStartKey = Key('welcome-help-start');
+  static const Key helpDialogInstructionsKey =
+      Key('welcome-help-instructions');
+  static const Key helpDialogPhoneKey = Key('welcome-help-phone');
+  static const Key settingsDialogPhoneKey = Key('welcome-settings-phone');
 
   void _handleGetStarted(BuildContext context) {
     final action = onGetStarted;
@@ -29,6 +39,103 @@ class WelcomeScreen extends StatelessWidget {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const AuthGate()),
+    );
+  }
+
+  /// Small pre-sign-in help panel with quick instructions and support contact.
+  void _showHelpDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('How to use Credit Bill System'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '1. Get Started to sign in or create an account.',
+              ),
+              const SizedBox(height: 6),
+              const Text('2. Add your credit cards from the Dashboard.'),
+              const SizedBox(height: 6),
+              const Text('3. Open Bills and tap Add Bill for a statement.'),
+              const SizedBox(height: 6),
+              const Text('4. Tap Record Payment on a bill to pay it.'),
+              const SizedBox(height: 6),
+              const Text('5. Use Calendar to see upcoming due dates.'),
+              const SizedBox(height: 6),
+              const Text('6. Open Settings to manage the app.'),
+              const SizedBox(height: 16),
+              Semantics(
+                key: helpDialogInstructionsKey,
+                label: 'Instructions complete',
+                child: const Text(
+                  'Follow these steps to set up and use the app.',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Need help? Call ${ContactDetailsPage.supportPhone}',
+                key: helpDialogPhoneKey,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Got it'),
+          ),
+          FilledButton(
+            key: helpDialogStartKey,
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _handleGetStarted(context);
+            },
+            child: const Text('Get Started'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Settings live behind sign-in; point visitors there without a dead link.
+  void _showSettingsDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Settings'),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Settings are available after you sign in. Get Started to '
+              'continue to sign-in.',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Need help? Call ${ContactDetailsPage.supportPhone}',
+              key: settingsDialogPhoneKey,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: settingsDialogStartKey,
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _handleGetStarted(context);
+            },
+            child: const Text('Get Started'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -69,7 +176,7 @@ class WelcomeScreen extends StatelessWidget {
                       top: Radius.circular(28),
                     ),
                   ),
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -121,39 +228,57 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Semantics(
-                        button: true,
-                        label: 'Get Started button',
-                        child: ElevatedButton.icon(
-                          key: getStartedKey,
-                          onPressed: () => _handleGetStarted(context),
-                          icon: const Icon(Icons.arrow_forward_rounded),
-                          label: const Text('Get Started'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(54),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.lock_outline,
-                            size: 14,
-                            color: textMuted,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Private by design. Your data stays with you.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: textMuted,
-                            ),
-                          ),
-                        ],
+                      ValueListenableBuilder<List<String>>(
+                        valueListenable: WelcomeLayout.order,
+                        builder: (context, order, _) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (final item in order) ...[
+                                if (item == WelcomeItemId.getStarted)
+                                  _buildGetStarted(context),
+                                if (item == WelcomeItemId.help)
+                                  _buildSecondaryLink(
+                                    context,
+                                    key: helpKey,
+                                    icon: Icons.help_outline,
+                                    label: 'Help',
+                                    color: textSecondary,
+                                    onPressed: () => _showHelpDialog(context),
+                                  ),
+                                if (item == WelcomeItemId.settings)
+                                  _buildSecondaryLink(
+                                    context,
+                                    key: settingsKey,
+                                    icon: Icons.settings_outlined,
+                                    label: 'Settings',
+                                    color: textSecondary,
+                                    onPressed: () => _showSettingsDialog(context),
+                                  ),
+                                const SizedBox(height: 8),
+                              ],
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.lock_outline,
+                                    size: 14,
+                                    color: textMuted,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Private by design. Your data stays with you.',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -162,6 +287,54 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Primary action, kept as a widget so Settings can reorder it with the
+  /// small Help and Settings links.
+  Widget _buildGetStarted(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Get Started button',
+      child: ElevatedButton.icon(
+        key: getStartedKey,
+        onPressed: () => _handleGetStarted(context),
+        icon: const Icon(Icons.arrow_forward_rounded),
+        label: const Text('Get Started'),
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size.fromHeight(54),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Compact link used for the welcome page's secondary actions.
+  Widget _buildSecondaryLink(
+    BuildContext context, {
+    required Key key,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return TextButton.icon(
+      key: key,
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        textStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

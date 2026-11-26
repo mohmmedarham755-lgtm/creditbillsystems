@@ -185,7 +185,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     // Verify Bills tab is displayed
-    expect(find.text('Log Bill'), findsOneWidget);
+    expect(find.text('Add Bill'), findsOneWidget);
 
     // Tap on Calendar tab
     await tester.tap(find.text('Calendar'));

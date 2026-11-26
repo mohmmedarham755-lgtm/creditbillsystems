@@ -180,10 +180,13 @@ class _DashboardTab extends StatelessWidget {
                 cardProvider.hasAuthenticatedUser &&
                 !cardProvider.isPortfolioLoading &&
                 cardProvider.portfolioErrorMessage == null) ...[
-              UtilizationGaugeWidget(
-                utilizationPercentage: CreditCalculator.calculateUtilization(
-                  totalBalance: cardProvider.totalCurrentBalance,
-                  totalLimit: cardProvider.totalCreditLimit,
+              Center(
+                key: const Key('dashboard-utilization-gauge-center'),
+                child: UtilizationGaugeWidget(
+                  utilizationPercentage: CreditCalculator.calculateUtilization(
+                    totalBalance: cardProvider.totalCurrentBalance,
+                    totalLimit: cardProvider.totalCreditLimit,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),

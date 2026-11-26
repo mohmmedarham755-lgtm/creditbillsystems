@@ -263,11 +263,21 @@ class BillEntryFormState extends State<BillEntryForm> {
   }
 
   Future<void> _saveBill() async {
+    final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+    final parsedAmount =
+        double.tryParse(_statementAmountController.text.trim());
+    if (parsedAmount == null || parsedAmount <= 0) {
+      scaffoldMessenger?.showSnackBar(
+        const SnackBar(
+          content: Text('Bill not saved. Enter an amount greater than 0.'),
+        ),
+      );
+    }
+
     if (!_formKey.currentState!.validate()) return;
     if (selectedCard == null || _statementDate == null) return;
 
     final billProvider = context.read<BillProvider>();
-    final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
 
     final amount = double.parse(_statementAmountController.text.trim());
 
@@ -288,7 +298,7 @@ class BillEntryFormState extends State<BillEntryForm> {
 
     Navigator.of(context).pop();
     scaffoldMessenger?.showSnackBar(
-      const SnackBar(content: Text('Bill logged successfully.')),
+      const SnackBar(content: Text('Bill added successfully.')),
     );
   }
 
@@ -462,7 +472,7 @@ class BillEntryFormState extends State<BillEntryForm> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Log New Bill',
+                  'Add New Bill',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -511,7 +521,7 @@ class BillEntryFormState extends State<BillEntryForm> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(
-                      'Could not log bill: $errorMessage',
+                      'Could not add bill: $errorMessage',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),

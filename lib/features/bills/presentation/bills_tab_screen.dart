@@ -5,13 +5,15 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../cards/presentation/card_display_name.dart';
 import '../domain/bill_model.dart';
 import '../domain/bill_status.dart';
 import 'bill_detail_screen.dart';
 import 'bill_entry_form.dart';
 import 'bill_provider.dart';
+import 'payment_logger_bottom_sheet.dart';
 
-/// Bills tab screen showing the user's bill statements and a "+ Log Bill" action.
+/// Bills tab screen showing the user's bill statements and a "+ Add Bill" action.
 class BillsTabScreen extends StatefulWidget {
   const BillsTabScreen({super.key});
 
@@ -68,7 +70,7 @@ class _BillsTabScreenState extends State<BillsTabScreen> {
                   key: const Key('bills-tab.log-bill'),
                   onPressed: billProvider.isSaving ? null : () => showBillEntryForm(context),
                   icon: const Icon(Icons.add),
-                  label: const Text('Log Bill'),
+                  label: const Text('Add Bill'),
                 ),
               ],
             ),
@@ -134,6 +136,7 @@ class _BillsTabScreenState extends State<BillsTabScreen> {
                       builder: (_) => BillDetailScreen(bill: bill),
                     ),
                   ),
+                  onRecordPayment: () => _recordPayment(context, bill),
                 ),
               ),
             ],
@@ -141,6 +144,16 @@ class _BillsTabScreenState extends State<BillsTabScreen> {
         ),
       ),
     );
+  }
+
+  /// Opens the payment logger sheet and reports the outcome to the user.
+  Future<void> _recordPayment(BuildContext context, BillModel bill) async {
+    final recorded = await showPaymentLoggerBottomSheet(context, bill: bill);
+    if (context.mounted && recorded == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment recorded successfully.')),
+      );
+    }
   }
 
   Widget _buildLoadingState() {
@@ -153,60 +166,82 @@ class _BillsTabScreenState extends State<BillsTabScreen> {
   }
 }
 
-/// Displays one bill statement in a list tile.
+/// Displays one bill statement in a list tile with a Record Payment action.
 class _BillTile extends StatelessWidget {
   final BillModel bill;
   final VoidCallback? onTap;
+  final VoidCallback? onRecordPayment;
 
-  const _BillTile({super.key, required this.bill, this.onTap});
+  const _BillTile({
+    super.key,
+    required this.bill,
+    this.onTap,
+    this.onRecordPayment,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isOverdue = bill.status == BillStatus.overdue;
+    final canPay = bill.status != BillStatus.paid && bill.remainingBalance > 0;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        key: const Key('bill-tile.content'),
-        title: Text(
-          'Card ${bill.cardId}',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              'Statement: ${DateFormatter.formatDisplay(bill.statementDate)}',
-              style: Theme.of(context).textTheme.bodySmall,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            key: const Key('bill-tile.content'),
+            title: Text(
+              cardDisplayName(context, bill.cardId),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            Text(
-              'Due: ${DateFormatter.formatDisplay(bill.dueDate)}',
-              style: Theme.of(context).textTheme.bodySmall,
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  'Statement: ${DateFormatter.formatDisplay(bill.statementDate)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  'Due: ${DateFormatter.formatDisplay(bill.dueDate)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  'Status: ${bill.status.name[0].toUpperCase()}${bill.status.name.substring(1)}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isOverdue
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                    fontWeight: isOverdue ? FontWeight.w600 : null,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              'Status: ${bill.status.name[0].toUpperCase()}${bill.status.name.substring(1)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            trailing: Text(
+              CurrencyFormatter.format(bill.remainingBalance),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
                 color: isOverdue
                     ? Theme.of(context).colorScheme.error
                     : null,
-                fontWeight: isOverdue ? FontWeight.w600 : null,
               ),
             ),
-          ],
-        ),
-        trailing: Text(
-          CurrencyFormatter.format(bill.remainingBalance),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: isOverdue
-                ? Theme.of(context).colorScheme.error
-                : null,
+            onTap: onTap,
           ),
-        ),
-        onTap: onTap,
+          if (canPay)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: FilledButton.icon(
+                key: Key('bills-tab.record-payment-${bill.id}'),
+                onPressed: onRecordPayment,
+                icon: const Icon(Icons.payment_outlined),
+                label: const Text('Record Payment'),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -235,7 +270,7 @@ class _EmptyBillsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tap "Log Bill" to record your first statement.',
+              'Tap "Add Bill" to record your first statement.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

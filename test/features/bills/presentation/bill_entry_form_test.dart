@@ -428,6 +428,36 @@ void main() {
       expect(find.text('Enter a statement amount.'), findsOneWidget);
     });
 
+    testWidgets('rejects a zero amount with a visible message', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _formApp(cardProvider: cardProvider, billProvider: billProvider),
+      );
+
+      cardRepository.streamFor('user-1').add([_testCard1]);
+      await tester.pumpAndSettle();
+
+      final formState = tester.state<BillEntryFormState>(
+        find.byType(BillEntryForm),
+      );
+      formState.onCardSelected(_testCard1);
+      await tester.pumpAndSettle();
+
+      formState.onStatementDateChanged(DateTime(2026, 12, 20));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('bill-entry.statement-amount')), '000');
+      await tester.tap(find.byKey(const Key('bill-entry.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter an amount greater than 0.'), findsOneWidget);
+      expect(
+        find.text('Bill not saved. Enter an amount greater than 0.'),
+        findsOneWidget,
+      );
+      expect(billRepository.createCalls, 0);
+    });
+
     testWidgets('attaches an optional bill image and saves its path', (
       tester,
     ) async {

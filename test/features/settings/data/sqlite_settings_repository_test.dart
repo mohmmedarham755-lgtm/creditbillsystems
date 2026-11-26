@@ -1,5 +1,6 @@
 import 'package:creditbillsytems/core/database/database_helper.dart';
 import 'package:creditbillsytems/features/settings/data/sqlite_settings_repository.dart';
+import 'package:creditbillsytems/features/settings/domain/welcome_layout.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -31,6 +32,51 @@ void main() {
 
     await nextSession.saveLogoPath(null);
     expect((await repository.getSettings()).logoPath, isNull);
+  });
+
+  test('SQLite settings repository round-trips the welcome action order', () async {
+    final db = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath);
+    addTearDown(() async => db.close());
+
+    final repository = SqliteSettingsRepository(
+      dbHelper: DatabaseHelper.withDatabase(db),
+    );
+
+    expect(await repository.getWelcomeOrder(), isNull);
+
+    final order = [
+      WelcomeItemId.help,
+      WelcomeItemId.getStarted,
+      WelcomeItemId.settings,
+    ];
+    await repository.saveWelcomeOrder(order);
+
+    final nextSession = SqliteSettingsRepository(
+      dbHelper: DatabaseHelper.withDatabase(db),
+    );
+    expect(await nextSession.getWelcomeOrder(), order);
+  });
+
+  test('SQLite settings repository round-trips the default bank name', () async {
+    final db = await databaseFactoryFfi.openDatabase(inMemoryDatabasePath);
+    addTearDown(() async => db.close());
+
+    final repository = SqliteSettingsRepository(
+      dbHelper: DatabaseHelper.withDatabase(db),
+    );
+
+    expect(await repository.getBankName(), isNull);
+
+    await repository.saveBankName("People's Bank");
+    expect(await repository.getBankName(), "People's Bank");
+
+    final nextSession = SqliteSettingsRepository(
+      dbHelper: DatabaseHelper.withDatabase(db),
+    );
+    expect((await nextSession.getSettings()).bankName, "People's Bank");
+
+    await nextSession.saveBankName(null);
+    expect(await repository.getBankName(), isNull);
   });
 
   test(

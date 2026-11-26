@@ -16,6 +16,7 @@ import 'package:creditbillsytems/features/settings/presentation/app_version_page
 import 'package:creditbillsytems/features/settings/presentation/contact_details_page.dart';
 import 'package:creditbillsytems/features/settings/presentation/logout_confirmation_page.dart';
 import 'package:creditbillsytems/features/settings/presentation/settings_screen.dart';
+import 'package:creditbillsytems/features/settings/presentation/welcome_order_screen.dart';
 
 class _FakeAuthRepository implements AuthRepository {
   bool failSignOut = false;
@@ -59,6 +60,18 @@ class _FakeSettingsRepository implements SettingsRepository {
 
   @override
   Future<void> saveLogoPath(String? logoPath) async {}
+
+  @override
+  Future<List<String>?> getWelcomeOrder() async => null;
+
+  @override
+  Future<void> saveWelcomeOrder(List<String> order) async {}
+
+  @override
+  Future<String?> getBankName() async => null;
+
+  @override
+  Future<void> saveBankName(String? bankName) async {}
 }
 
 AuthProvider _signedInAuthProvider({bool failSignOut = false}) {
@@ -104,7 +117,7 @@ Future<void> _openEntryAndExpect(
 }
 
 void main() {
-  testWidgets('hub lists all six destinations for a non-admin user', (
+  testWidgets('hub lists all seven destinations for a non-admin user', (
     tester,
   ) async {
     final auth = _signedInAuthProvider();
@@ -117,6 +130,8 @@ void main() {
     expect(find.text('Admin'), findsOneWidget);
     expect(find.byKey(SettingsScreen.helpSettingsEntryKey), findsOneWidget);
     expect(find.text('Help & Settings'), findsOneWidget);
+    expect(find.byKey(SettingsScreen.welcomeOrderEntryKey), findsOneWidget);
+    expect(find.text('Welcome Page Items'), findsOneWidget);
     expect(find.byKey(SettingsScreen.aboutEntryKey), findsOneWidget);
     expect(find.text('About'), findsOneWidget);
     expect(find.byKey(SettingsScreen.contactEntryKey), findsOneWidget);
@@ -139,7 +154,7 @@ void main() {
     expect(find.byKey(SettingsScreen.accountHeaderKey), findsOneWidget);
     expect(find.text('user'), findsOneWidget);
     expect(find.text('user@example.com'), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(6));
+    expect(find.byType(ListTile), findsNWidgets(7));
   });
 
   testWidgets('popping the Admin route triggers the logo refresh callback', (
@@ -183,6 +198,12 @@ void main() {
       tester,
       SettingsScreen.helpSettingsEntryKey,
       find.byKey(AdminHelpSettingsScreen.uploadButtonKey),
+    );
+
+    await _openEntryAndExpect(
+      tester,
+      SettingsScreen.welcomeOrderEntryKey,
+      find.byKey(WelcomeOrderScreen.screenKey),
     );
 
     await _openEntryAndExpect(

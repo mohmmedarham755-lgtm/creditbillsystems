@@ -11,6 +11,7 @@ import 'admin_logo_input_page.dart';
 import 'app_version_page.dart';
 import 'contact_details_page.dart';
 import 'logout_confirmation_page.dart';
+import 'welcome_order_screen.dart';
 
 /// Dedicated account and information hub shown by the Settings tab.
 ///
@@ -27,6 +28,7 @@ class SettingsScreen extends StatelessWidget {
   static const Key accountHeaderKey = Key('settings-account-header');
   static const Key adminEntryKey = Key('admin-page-tile');
   static const Key helpSettingsEntryKey = Key('help-settings-tile');
+  static const Key welcomeOrderEntryKey = Key('welcome-order-tile');
   static const Key aboutEntryKey = Key('about-page-tile');
   static const Key contactEntryKey = Key('contact-details-tile');
   static const Key versionEntryKey = Key('app-version-page-tile');
@@ -74,6 +76,14 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.settings_outlined,
           title: 'Help & Settings',
           onTap: () => _openHelpSettings(context),
+        ),
+        const Divider(height: 1),
+        _SettingsEntry(
+          entryKey: welcomeOrderEntryKey,
+          icon: Icons.swap_vert,
+          title: 'Welcome Page Items',
+          subtitle: 'Move Get Started, Help and Settings up or down',
+          onTap: () => _pushPage(context, const WelcomeOrderScreen()),
         ),
         const Divider(height: 1),
         _SettingsEntry(
